@@ -1,0 +1,62 @@
+<style>
+  /* ─── ① sidebar-header 纵向布局 ─── */
+  .sidebar-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    padding: 0 !important;
+    min-height: unset !important;
+    gap: 0 !important;
+  }
+
+  /* ─── ② 隐藏默认 Brand，保留自定义 SidebarTop ─── */
+  .sidebar-header > div:not([data-harness-sidebar-top]):not(:has([data-harness-sidebar-top])) {
+    display: none !important;
+  }
+  .sidebar-header > button {
+    display: none !important;
+  }
+
+  /* ─── ③ 隐藏搜索框 ─── */
+  .search-field {
+    display: none !important;
+  }
+
+  /* ─── ④ 隐藏 "+" 新建 story 按钮（覆盖所有可能选择器） ─── */
+  [data-action="create-new-story"],
+  button[aria-label="Create a new story"],
+  .sidebar-subheading button,
+  .sidebar-container > div > button:not(.sidebar-header button),
+  nav ~ button,
+  nav + button {
+    display: none !important;
+  }
+
+  /* ─── ⑤ 隐藏 DesignToken 树条目 ─── */
+  [data-item-id="designtoken"],
+  [data-item-id="designtoken--docs"] {
+    display: none !important;
+  }
+
+  /* ─── ⑥ 选中态：浅灰背景 + 深色文字（覆盖 colorSecondary） ─── */
+  [data-selected="true"],
+  [data-selected="true"] *,
+  button[data-selected="true"],
+  a[data-selected="true"] {
+    background-color: #f4f4f5 !important;
+    color: #18181b !important;
+  }
+
+  /* ─── ⑦ hover 态：极浅灰 ─── */
+  #storybook-explorer-tree button:hover,
+  #storybook-explorer-tree a:hover {
+    background-color: #fafafa !important;
+  }
+
+  /* ─── ⑧ 隐藏 Storybook 通知弹窗 ─── */
+  #storybook-notifications-container,
+  div[class*="NotificationList"],
+  div[class*="notification" i] {
+    display: none !important;
+  }
+</style>

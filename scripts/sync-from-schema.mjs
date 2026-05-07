@@ -1,0 +1,84 @@
+#!/usr/bin/env node
+/**
+ * Schema → Tailwind 扩展 + safelist → .cursorrules + src/harness/rules 镜像
+ * 运行：npm run sync:harness
+ */
+import fs from "node:fs";
+import path from "node:path";
+import { loadSpecs, getRepoRoot } from "./lib/load-specs.mjs";
+import { renderCursorrules, renderHarnessMarkdown } from "./lib/render-harness-rules.mjs";
+
+const root = getRepoRoot();
+
+/** 从 specs 收集需在 JIT 中保留的 class token（JSON enumMap / baseline） */
+function collectSafelistTokens(specs) {
+  const set = new Set();
+  for (const s of specs) {
+    for (const t of s.styleLock?.baselineTokens ?? []) {
+      for (const part of String(t).split(/\s+/)) if (part) set.add(part);
+    }
+    const props = [...(s.requiredProps ?? []), ...(s.optionalProps ?? [])];
+    for (const p of props) {
+      const em = p.enumMap;
+      if (!em) continue;
+      for (const classes of Object.values(em)) {
+        if (!Array.isArray(classes)) continue;
+        for (const chunk of classes) {
+          for (const part of String(chunk).split(/\s+/)) if (part) set.add(part);
+        }
+      }
+    }
+  }
+  return [...set].sort();
+}
+
+function buildTailwindExtend(specs) {
+  const spacing = {};
+  const colors = {};
+  const borderRadius = {};
+  for (const s of specs) {
+    const te = s.tailwindExtend;
+    if (!te) continue;
+    Object.assign(spacing, te.spacing ?? {});
+    Object.assign(colors, te.colors ?? {});
+    Object.assign(borderRadius, te.borderRadius ?? {});
+  }
+  return { spacing, colors, borderRadius };
+}
+
+function writeTailwindHarnessGenerated(specs) {
+  const extend = buildTailwindExtend(specs);
+  const safelist = collectSafelistTokens(specs);
+  const outPath = path.join(root, "tailwind.harness.generated.ts");
+  const body = `/* eslint-disable */
+// AUTO-GENERATED — 运行 npm run sync:harness 重新生成；请勿手改。
+export const harnessTailwindExtend = ${JSON.stringify(extend, null, 2)} as const;
+
+/** 来自 schema enumMap / baselineTokens，供 Tailwind JIT 拣选 */
+export const harnessSafelist: string[] = ${JSON.stringify(safelist, null, 2)};
+`;
+  fs.writeFileSync(outPath, body, "utf8");
+  console.log(`Wrote ${path.relative(root, outPath)}`);
+}
+
+function writeHarnessRulesMirror(specs) {
+  const dir = path.join(root, "src/harness/rules");
+  fs.mkdirSync(dir, { recursive: true });
+  const md = renderHarnessMarkdown(specs);
+  const mdPath = path.join(dir, "HARNESS_RULES.md");
+  fs.writeFileSync(mdPath, md, "utf8");
+  console.log(`Wrote ${path.relative(root, mdPath)}`);
+}
+
+function writeCursorrules(specs) {
+  const outFile = path.join(root, ".cursorrules");
+  fs.writeFileSync(outFile, renderCursorrules(specs), "utf8");
+  console.log(`Wrote ${path.relative(root, outFile)}`);
+}
+
+const specs = loadSpecs();
+writeTailwindHarnessGenerated(specs);
+writeHarnessRulesMirror(specs);
+writeCursorrules(specs);
+
+console.log(`sync:harness 完成（${specs.length} specs）`);
