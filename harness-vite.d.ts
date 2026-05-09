@@ -4,3 +4,8 @@ declare module "vite-plugin-schema-api" {
 }
 
 declare module "culori";
+
+declare module "*?raw" {
+  const content: string;
+  export default content;
+}

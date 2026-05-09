@@ -18,7 +18,6 @@ function devApi(path: string): string {
   return `${window.location.origin}${path}`;
 }
 
-const toOklch = converter("oklch");
 const toRgb = converter("rgb");
 
 function clamp(n: number, min: number, max: number) {
@@ -37,12 +36,18 @@ function cssToHex8(cssColor: string): string {
   return `#${[r, g, b, a].map((x) => x.toString(16).padStart(2, "0")).join("")}`;
 }
 
-function hex8ToOklchCss(hex: string): string {
-  const p = parse(hex);
-  if (!p) return hex;
-  const ok = toOklch(p);
-  if (!ok) return hex;
-  return formatCss(ok);
+function hex8ToHexCss(hex8: string): string {
+  const p = parse(hex8);
+  if (!p) return hex8;
+  const rgb = toRgb(p);
+  if (!rgb) return hex8;
+  const r = Math.round(clamp(rgb.r ?? 0, 0, 1) * 255);
+  const g = Math.round(clamp(rgb.g ?? 0, 0, 1) * 255);
+  const b = Math.round(clamp(rgb.b ?? 0, 0, 1) * 255);
+  const a = typeof rgb.alpha === "number" ? clamp(rgb.alpha, 0, 1) : 1;
+  const hex6 = `#${[r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("")}`;
+  if (a >= 0.999) return hex6;
+  return `rgba(${r}, ${g}, ${b}, ${a.toFixed(2).replace(/\.?0+$/, "")})`;
 }
 
 function formatRgba(cssColor: string): string {
@@ -185,28 +190,30 @@ function ColorEditor({
 }) {
   const hex8 = React.useMemo(() => cssToHex8(value || "#000000"), [value]);
 
-  const oklchDisplay = React.useMemo(() => {
-    const p = parse(value);
-    if (!p) return "—";
-    const o = toOklch(p);
-    return o ? formatCss(o) : "—";
-  }, [value]);
+  const hexDisplay = React.useMemo(() => hex8.slice(0, 7), [hex8]);
 
   const rgbaDisplay = React.useMemo(() => formatRgba(value), [value]);
 
   function handlePickerChange(newHex8: string) {
-    onChange(hex8ToOklchCss(newHex8));
+    onChange(hex8ToHexCss(newHex8));
   }
 
   function handleCssInputCommit(text: string) {
     const p = parse(text);
     if (!p) return;
-    onChange(formatCss(p));
+    const rgb = toRgb(p);
+    if (!rgb) { onChange(text); return; }
+    const r = Math.round(clamp(rgb.r ?? 0, 0, 1) * 255);
+    const g = Math.round(clamp(rgb.g ?? 0, 0, 1) * 255);
+    const b = Math.round(clamp(rgb.b ?? 0, 0, 1) * 255);
+    const a = typeof rgb.alpha === "number" ? clamp(rgb.alpha, 0, 1) : 1;
+    const hex6 = `#${[r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("")}`;
+    onChange(a >= 0.999 ? hex6 : `rgba(${r}, ${g}, ${b}, ${a.toFixed(2).replace(/\.?0+$/, "")})`);
   }
 
   return (
-    <div className="flex flex-col gap-5 sm:flex-row">
-      <div className="flex shrink-0 flex-col items-center gap-3">
+    <div className="flex flex-col gap-5">
+      <div className="flex shrink-0 flex-col items-center gap-3" style={{ minWidth: 220 }}>
         <HexAlphaColorPicker
           color={hex8}
           onChange={handlePickerChange}
@@ -220,23 +227,15 @@ function ColorEditor({
         />
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-4">
-        <div
-          className="h-16 w-full rounded-lg border border-border shadow-inner"
-          style={{ background: value || "transparent" }}
-        />
-        <div className="space-y-2.5 text-sm">
-          <div>
-            <span className="text-xs font-medium text-muted-foreground">OKLCH</span>
-            <p className="mt-0.5 font-mono text-xs break-all text-foreground">{oklchDisplay}</p>
-          </div>
-          <div>
-            <span className="text-xs font-medium text-muted-foreground">RGBA</span>
-            <p className="mt-0.5 font-mono text-xs break-all text-foreground">{rgbaDisplay}</p>
-          </div>
-          <div>
-            <span className="text-xs font-medium text-muted-foreground">HEX</span>
-            <p className="mt-0.5 font-mono text-xs break-all text-foreground">{hex8.slice(0, 7)}</p>
+      <div className="flex min-w-0 flex-col gap-4">
+        <div className="flex items-center gap-3">
+          <div
+            className="h-10 w-10 shrink-0 rounded-lg border border-border shadow-inner"
+            style={{ background: value || "transparent" }}
+          />
+          <div className="min-w-0 flex-1 space-y-0.5 text-xs">
+            <p className="font-mono break-all text-foreground">{hexDisplay}</p>
+            <p className="font-mono break-all text-muted-foreground">{rgbaDisplay}</p>
           </div>
         </div>
 
@@ -744,7 +743,13 @@ export function DesignTokenPage() {
       {/* ── Token 编辑弹框 ── */}
       <dialog
         ref={dialogRef}
-        className="fixed top-1/2 left-1/2 z-50 m-0 w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-card p-0 text-card-foreground shadow-2xl backdrop:bg-black/50"
+        className="rounded-xl border border-border bg-card p-0 text-card-foreground shadow-2xl backdrop:bg-black/50"
+        style={{
+          width: "min(560px, calc(100vw - 2rem))",
+          minWidth: 340,
+          maxWidth: "90vw",
+          overflow: "visible",
+        }}
         onClose={closeDialog}
         onClick={(e) => {
           if (e.target === dialogRef.current) closeDialog();

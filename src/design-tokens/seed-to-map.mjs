@@ -411,11 +411,8 @@ function genSpacingTokens(sizeUnit) {
   const s = (n) => `${sizeUnit * n}px`;
   return {
     "space-0": "0",
-    "space-0.5": s(0.5),
     "space-1": s(1),
-    "space-1.5": s(1.5),
     "space-2": s(2),
-    "space-2.5": s(2.5),
     "space-3": s(3),
     "space-4": s(4),
     "space-5": s(5),

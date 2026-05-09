@@ -24,6 +24,7 @@ const TOKEN_ZH: Record<string, string> = {
   "color-success-bg": "成功色的浅色背景颜色",
   "color-success-bg-hover": "成功色的浅色背景色悬浮",
   "color-success-border": "成功色的描边色",
+  "color-success-border-hover": "成功色描边悬浮态",
   "color-success-hover": "成功色的深色悬浮态",
   "color-success": "成功色",
   "color-success-active": "成功色的深色激活态",
@@ -35,6 +36,7 @@ const TOKEN_ZH: Record<string, string> = {
   "color-warning-bg": "警戒色的浅色背景颜色",
   "color-warning-bg-hover": "警戒色的浅色背景色悬浮",
   "color-warning-border": "警戒色的描边色",
+  "color-warning-border-hover": "警戒色描边悬浮态",
   "color-warning-hover": "警戒色的深色悬浮态",
   "color-warning": "警戒色",
   "color-warning-active": "警戒色的深色激活态",
@@ -45,7 +47,9 @@ const TOKEN_ZH: Record<string, string> = {
   // Error
   "color-error-bg": "错误色的浅色背景颜色",
   "color-error-bg-hover": "错误色的浅色背景色悬浮",
+  "color-error-bg-active": "错误色浅色背景激活态",
   "color-error-border": "错误色的描边色",
+  "color-error-border-hover": "错误色描边悬浮态",
   "color-error-hover": "错误色的深色悬浮态",
   "color-error": "错误色",
   "color-error-active": "错误色的深色激活态",
@@ -57,7 +61,13 @@ const TOKEN_ZH: Record<string, string> = {
   "color-info-bg": "信息色浅色背景",
   "color-info-bg-hover": "信息色浅色背景悬浮",
   "color-info-border": "信息色描边",
+  "color-info-border-hover": "信息色描边悬浮态",
+  "color-info-hover": "信息色深色悬浮态",
   "color-info": "信息色",
+  "color-info-active": "信息色深色激活态",
+  "color-info-text-hover": "信息色文本悬浮态",
+  "color-info-text": "信息色文本默认态",
+  "color-info-text-active": "信息色文本激活态",
 
   // Link
   "color-link": "链接色",
@@ -84,7 +94,10 @@ const TOKEN_ZH: Record<string, string> = {
   "color-bg-elevated": "浮层容器背景色",
   "color-bg-spotlight": "引起注意的背景色",
   "color-bg-solid": "纯实色背景",
+  "color-bg-solid-hover": "纯实色背景悬浮态",
+  "color-bg-solid-active": "纯实色背景激活态",
   "color-bg-mask": "浮层的背景蒙层颜色",
+  "color-border-disabled": "禁用态边框色",
   "color-white": "纯白色",
   "color-shadow": "阴影颜色",
 
@@ -160,6 +173,7 @@ const TOKEN_ZH: Record<string, string> = {
   "border-radius-outer": "外圆角",
 
   // Spacing
+  "padding-xxxs": "微小内间距",
   "padding-xxs": "极小内间距",
   "padding-xs": "特小内间距",
   "padding-sm": "小内间距",
@@ -185,6 +199,7 @@ const TOKEN_ZH: Record<string, string> = {
 
   // Motion
   "motion-duration-fast": "快速动效",
+  "motion-duration-150": "过渡动效 150ms",
   "motion-duration-mid": "中速动效",
   "motion-duration-slow": "慢速动效",
 
@@ -228,12 +243,37 @@ const TOKEN_ZH: Record<string, string> = {
   "layout-max-w-full": "最大宽度 100%",
   "layout-max-w-none": "不限制最大宽度",
   "layout-min-w-0": "最小宽度 0",
+  "layout-min-w-2xs": "最小宽度 2XS",
+  "layout-min-w-xs": "最小宽度 XS",
   "layout-min-w-sm": "最小宽度 SM",
   "layout-min-w-md": "最小宽度 MD",
   "layout-min-w-lg": "最小宽度 LG",
   "layout-min-w-xl": "最小宽度 XL",
   "layout-min-w-full": "最小宽度 100%",
   "elevation-none": "无阴影",
+
+  // Textarea
+  "textarea-min-height": "文本域最小高度",
+
+  // Space scale（Tailwind 数字间距）
+  "space-0": "间距 0",
+  "space-1": "间距 1（4px）",
+  "space-2": "间距 2（8px）",
+  "space-3": "间距 3（12px）",
+  "space-4": "间距 4（16px）",
+  "space-5": "间距 5（20px）",
+  "space-6": "间距 6（24px）",
+  "space-7": "间距 7（28px）",
+  "space-8": "间距 8（32px）",
+  "space-9": "间距 9（36px）",
+  "space-10": "间距 10（40px）",
+  "space-11": "间距 11（44px）",
+  "space-12": "间距 12（48px）",
+  "space-14": "间距 14（56px）",
+  "space-16": "间距 16（64px）",
+  "space-20": "间距 20（80px）",
+  "space-24": "间距 24（96px）",
+  "space-32": "间距 32（128px）",
 };
 
 /* ────────────────────────────────────────────────────────────────────────── */

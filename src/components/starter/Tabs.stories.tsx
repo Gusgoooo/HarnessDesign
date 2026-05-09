@@ -1,6 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
+import { autoClassControls } from "@/design-tokens/tw-class-audit";
+import tabsSrc from "./tabs.tsx?raw";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
+
+const audit = autoClassControls(tabsSrc);
 
 const meta = {
   title: "Tabs",
@@ -8,8 +12,10 @@ const meta = {
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({}),
   },
+  args: { ...audit.args },
   argTypes: {
     className: { table: { disable: true } },
+    ...audit.argTypes,
   },
 } satisfies Meta;
 
@@ -17,10 +23,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  render: () => (
+  render: (args) => (
     <div className="w-full">
       <Tabs defaultValue="a">
-        <TabsList>
+        <TabsList className={audit.buildClassName(args as unknown as Record<string, string>)}>
           <TabsTrigger value="a">概况</TabsTrigger>
           <TabsTrigger value="b">详情</TabsTrigger>
         </TabsList>

@@ -102,7 +102,7 @@ export function DialogContent({
       }}
     >
       <div
-        className="w-full max-w-[var(--layout-max-w-lg)] rounded-lg border border-border bg-background p-lg shadow-lg"
+        className="w-full max-w-[var(--layout-max-w-lg)] rounded-lg border border-border bg-background text-foreground p-lg shadow-lg"
         style={style}
         onClick={(e) => e.stopPropagation()}
       >

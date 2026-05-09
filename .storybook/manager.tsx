@@ -329,37 +329,30 @@ function InfoTip({ text }: { text: string }) {
     </span>
   );
 }
-const IcoMsg = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>;
-const IcoImg = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>;
 const IcoUp = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
 
-/* ── 添加组件弹窗 ── */
-
-type AddMode = "text" | "image" | "upload";
+/* ── 添加组件弹窗（仅上传 .tsx） ── */
 
 function AddComponentDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [mode, setMode] = React.useState<AddMode>("text");
-  const [text, setText] = React.useState("");
-  const [imgFile, setImgFile] = React.useState<File | null>(null);
-  const [imgPrev, setImgPrev] = React.useState<string | null>(null);
-  const [storyFile, setStoryFile] = React.useState<File | null>(null);
+  const [tsxFile, setTsxFile] = React.useState<File | null>(null);
   const [busy, setBusy] = React.useState(false);
   const dlg = React.useRef<HTMLDialogElement>(null);
-  const imgInput = React.useRef<HTMLInputElement>(null);
-  const storyInput = React.useRef<HTMLInputElement>(null);
+  const fileInput = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => { const e = dlg.current; if (!e) return; if (open && !e.open) e.showModal(); else if (!open && e.open) e.close(); }, [open]);
-  React.useEffect(() => { if (!imgFile) { setImgPrev(null); return; } const u = URL.createObjectURL(imgFile); setImgPrev(u); return () => URL.revokeObjectURL(u); }, [imgFile]);
 
-  function reset() { setText(""); setImgFile(null); setImgPrev(null); setStoryFile(null); setBusy(false); }
+  function reset() { setTsxFile(null); setBusy(false); }
   function close() { reset(); onClose(); }
 
-  async function go(url: string, body: BodyInit | string, ct?: string) {
+  async function upload() {
+    if (!tsxFile) return;
     setBusy(true);
     try {
-      const h: Record<string, string> = ct ? { "Content-Type": ct } : {};
-      const r = await fetch(devApi(url), { method: "POST", headers: h, body });
-      if (r.ok) { close(); window.location.reload(); } else alert("失败: " + (await r.text()));
+      const fd = new FormData();
+      fd.append("mode", "upload");
+      fd.append("file", tsxFile);
+      const r = await fetch(devApi("/api/upload-component"), { method: "POST", body: fd });
+      if (r.ok) { close(); window.location.reload(); } else alert("上传失败: " + (await r.text()));
     } catch (e) { alert(String(e)); } finally { setBusy(false); }
   }
 
@@ -374,85 +367,39 @@ function AddComponentDialog({ open, onClose }: { open: boolean; onClose: () => v
     bgMuted: dark ? "#27272a" : "#fafafa",
   };
 
-  const tab = (m: AddMode, label: string) => (
-    <button type="button" onClick={() => setMode(m)} style={{
-      flex: 1, padding: "8px 0", fontSize: 13, fontWeight: mode === m ? 600 : 400,
-      color: mode === m ? D.blue : D.muted, background: "none", border: "none",
-      borderBottom: mode === m ? `2px solid ${D.blue}` : "2px solid transparent", cursor: "pointer", fontFamily: "inherit",
-    }}>{label}</button>
-  );
-
-  const btnP = (disabled: boolean, label: string, fn: () => void) => (
-    <button type="button" disabled={disabled} onClick={fn} style={{
-      padding: "8px 20px", fontSize: 13, fontWeight: 600, color: D.bg, background: D.text,
-      border: "none", borderRadius: D.radius, cursor: "pointer", fontFamily: "inherit", opacity: busy ? .6 : 1,
-    }}>{busy ? "处理中…" : label}</button>
-  );
-
   return (
     <dialog ref={dlg} onClose={close} onClick={e => { if (e.target === dlg.current) close(); }}
       style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", margin: 0,
-        width: 500, height: 400, padding: 0,
+        width: 480, padding: 0,
         border: `1px solid ${D.border}`, borderRadius: 12, background: D.bg, boxShadow: "0 25px 50px -12px rgba(0,0,0,.25)",
         overflow: "hidden", color: D.text, fontFamily: "system-ui,-apple-system,sans-serif" }}>
-      <div onClick={e => e.stopPropagation()} style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <div onClick={e => e.stopPropagation()} style={{ display: "flex", flexDirection: "column" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${D.border}` }}>
           <span style={{ fontSize: 16, fontWeight: 700 }}>添加组件</span>
           <button type="button" onClick={close} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: D.muted, display: "flex" }}><IcoX /></button>
         </div>
-        <div style={{ display: "flex", borderBottom: `1px solid ${D.border}`, padding: "0 20px" }}>
-          {tab("text", "文本描述生成")}{tab("image", "图片识别生成")}{tab("upload", "上传 Story")}
+        <div style={{ padding: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, color: D.blue, marginBottom: 16 }}>
+            <IcoUp /><span style={{ fontSize: 14, fontWeight: 600 }}>上传 .tsx 组件文件</span>
+          </div>
+          <input ref={fileInput} type="file" accept=".tsx" style={{ display: "none" }} onChange={e => { if (e.target.files?.[0]) setTsxFile(e.target.files[0]); }} />
+          <button type="button" onClick={() => fileInput.current?.click()}
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: 32, width: "100%", boxSizing: "border-box",
+              border: `2px dashed ${D.border}`, borderRadius: D.radius, background: tsxFile ? (dark ? "#052e16" : "#f0fdf4") : D.bgMuted,
+              cursor: "pointer", color: tsxFile ? "#16a34a" : D.muted, fontSize: 13, fontFamily: "inherit" }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = D.blue} onMouseLeave={e => e.currentTarget.style.borderColor = D.border}>
+            <IcoUp />{tsxFile ? <span style={{ fontWeight: 600 }}>{tsxFile.name}</span> : <span>点击选择 .tsx 文件</span>}
+          </button>
+          <p style={{ fontSize: 12, color: D.muted, marginTop: 12, lineHeight: 1.5 }}>
+            支持上传组件文件（*.tsx），文件将被添加到 src/components/starter/ 目录。
+          </p>
         </div>
-        <div style={{ padding: 20, overflowY: "auto", flex: 1 }}>
-          {mode === "text" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, color: D.blue }}><IcoMsg /><span style={{ fontSize: 14, fontWeight: 600 }}>用文字描述你需要的组件</span></div>
-              <textarea value={text} onChange={e => setText(e.target.value)} placeholder="例如：一个带搜索过滤的下拉选择器，支持多选…"
-                style={{ width: "100%", minHeight: 120, padding: 12, fontSize: 13, fontFamily: "inherit", lineHeight: 1.6,
-                  borderRadius: D.radius, border: `1px solid ${D.border}`, resize: "vertical", outline: "none", boxSizing: "border-box" }}
-                onFocus={e => e.currentTarget.style.borderColor = D.blue} onBlur={e => e.currentTarget.style.borderColor = D.border} />
-            </div>
-          )}
-          {mode === "image" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, color: D.blue }}><IcoImg /><span style={{ fontSize: 14, fontWeight: 600 }}>上传设计图自动生成</span></div>
-              <input ref={imgInput} type="file" accept="image/*" style={{ display: "none" }} onChange={e => { if (e.target.files?.[0]) setImgFile(e.target.files[0]); }} />
-              {imgPrev ? (
-                <div style={{ position: "relative" }}>
-                  <img src={imgPrev} alt="" style={{ width: "100%", maxHeight: 240, objectFit: "contain", borderRadius: D.radius, border: `1px solid ${D.border}`, background: D.bgMuted }} />
-                  <button type="button" onClick={() => { setImgFile(null); if (imgInput.current) imgInput.current.value = ""; }}
-                    style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,.6)", color: "#fff", border: "none", borderRadius: 4, padding: 4, cursor: "pointer", display: "flex" }}><IcoX /></button>
-                </div>
-              ) : (
-                <button type="button" onClick={() => imgInput.current?.click()}
-                  style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: 32,
-                    border: `2px dashed ${D.border}`, borderRadius: D.radius, background: D.bgMuted, cursor: "pointer", color: D.muted, fontSize: 13, fontFamily: "inherit" }}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = D.blue} onMouseLeave={e => e.currentTarget.style.borderColor = D.border}>
-                  <IcoImg /><span>点击选择图片</span>
-                </button>
-              )}
-            </div>
-          )}
-          {mode === "upload" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, color: D.blue }}><IcoUp /><span style={{ fontSize: 14, fontWeight: 600 }}>上传已有组件文件</span></div>
-              <input ref={storyInput} type="file" accept=".tsx,.ts,.jsx,.js" style={{ display: "none" }} onChange={e => { if (e.target.files?.[0]) setStoryFile(e.target.files[0]); }} />
-              <button type="button" onClick={() => storyInput.current?.click()}
-                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: 32,
-                  border: `2px dashed ${D.border}`, borderRadius: D.radius, background: storyFile ? (dark ? "#052e16" : "#f0fdf4") : D.bgMuted,
-                  cursor: "pointer", color: storyFile ? "#16a34a" : D.muted, fontSize: 13, fontFamily: "inherit" }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = D.blue} onMouseLeave={e => e.currentTarget.style.borderColor = D.border}>
-                <IcoUp />{storyFile ? <span style={{ fontWeight: 600 }}>{storyFile.name}</span> : <span>点击选择 *.stories.tsx</span>}
-              </button>
-            </div>
-          )}
-        </div>
-        {/* 固定底部按钮栏 */}
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "12px 20px", borderTop: `1px solid ${D.border}` }}>
-          <button type="button" onClick={close} style={{ padding: "8px 20px", fontSize: 13, background: D.bg, border: `1px solid ${D.border}`, borderRadius: D.radius, cursor: "pointer", fontFamily: "inherit" }}>取消</button>
-          {mode === "text" && btnP(!text.trim() || busy, "生成组件", () => void go("/api/generate-component", JSON.stringify({ mode: "text", prompt: text.trim() }), "application/json"))}
-          {mode === "image" && btnP(!imgFile || busy, "识别并生成", () => { const fd = new FormData(); fd.append("mode", "image"); fd.append("file", imgFile!); void go("/api/generate-component", fd); })}
-          {mode === "upload" && btnP(!storyFile || busy, "上传组件", () => { const fd = new FormData(); fd.append("mode", "upload"); fd.append("file", storyFile!); void go("/api/upload-component", fd); })}
+          <button type="button" onClick={close} style={{ padding: "8px 20px", fontSize: 13, background: D.bg, border: `1px solid ${D.border}`, borderRadius: D.radius, cursor: "pointer", fontFamily: "inherit", color: D.text }}>取消</button>
+          <button type="button" disabled={!tsxFile || busy} onClick={() => void upload()} style={{
+            padding: "8px 20px", fontSize: 13, fontWeight: 600, color: D.bg, background: D.text,
+            border: "none", borderRadius: D.radius, cursor: "pointer", fontFamily: "inherit", opacity: (!tsxFile || busy) ? .5 : 1,
+          }}>{busy ? "上传中…" : "上传组件"}</button>
         </div>
       </div>
     </dialog>
@@ -508,9 +455,10 @@ function SidebarTop() {
     <DarkCtx.Provider value={dark}>
     <div data-harness-sidebar-top="" style={{
       display: "flex", flexDirection: "column", gap: 10,
-      padding: "16px 8px 12px",
+      padding: "16px 8px 0",
       fontFamily: "system-ui,-apple-system,sans-serif",
       borderBottom: `1px solid var(--mgr-border-light)`,
+      paddingBottom: 12,
     }}>
       <div style={{ display: "flex", alignItems: "center", padding: "0 12px" }}>
         <div style={{ fontSize: 21, fontWeight: 700, color: "var(--mgr-text)", letterSpacing: "-0.01em", flex: 1 }}>
@@ -1142,20 +1090,29 @@ function HarnessPanel() {
 
   return (
     <div style={HS.wrap}>
-      <div style={HS.header}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--mgr-text)" }}>{spec.componentName}</div>
-          {harnessCtx.storyId ? (
-            <div style={{ fontSize: 11, color: "var(--mgr-text-muted)", lineHeight: 1.35 }}>
-              当前变体：<span style={{ color: "var(--mgr-text)" }}>{harnessCtx.storyName ?? harnessCtx.storyId}</span>
-              <span style={{ fontFamily: "ui-monospace,monospace", color: "var(--mgr-text-tertiary)" }}> · {harnessCtx.storyId}</span>
-            </div>
-          ) : null}
+      <div style={{ ...HS.header, flexDirection: "column", alignItems: "stretch", gap: 8, padding: "12px 16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "var(--mgr-text)", whiteSpace: "nowrap" }}>{spec.componentName}</div>
+          <span style={{
+            fontSize: 10, fontWeight: 500, color: "var(--mgr-text-muted)",
+            padding: "2px 6px", borderRadius: 4,
+            background: "var(--mgr-bg-subtle)", fontFamily: "ui-monospace,monospace",
+            whiteSpace: "nowrap", flexShrink: 0,
+          }}>{filename}</span>
+          <div style={{ flex: 1 }} />
+          <button type="button" style={HS.btn()} onClick={() => void load()}>刷新</button>
+          <button type="button" style={HS.btn(true)} onClick={() => void save()}>保存</button>
         </div>
-        <span style={{ fontSize: 11, color: "var(--mgr-text-tertiary)", fontFamily: "ui-monospace,monospace" }}>{filename}</span>
-        <div style={{ flex: 1 }} />
-        <button type="button" style={HS.btn()} onClick={() => void load()}>刷新</button>
-        <button type="button" style={HS.btn(true)} onClick={() => void save()}>保存</button>
+        {harnessCtx.storyId ? (
+          <div style={{ fontSize: 11, color: "var(--mgr-text-muted)", lineHeight: 1.4, display: "flex", alignItems: "center", gap: 4 }}>
+            <span>当前变体:</span>
+            <span style={{
+              fontWeight: 600, color: "var(--mgr-text)",
+              padding: "1px 6px", borderRadius: 3,
+              background: "var(--mgr-bg-subtle)",
+            }}>{harnessCtx.storyName ?? harnessCtx.storyId}</span>
+          </div>
+        ) : null}
       </div>
 
       {status && (
@@ -1408,7 +1365,7 @@ addons.register("harness-design", () => {
 
   addons.add("harness-design/harness-panel", {
     type: types.PANEL,
-    title: "Harness",
+    title: "AI适配",
     render: ({ active }) => active ? <HarnessPanel /> : null,
   });
 });

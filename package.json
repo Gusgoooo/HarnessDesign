@@ -5,7 +5,14 @@
   "private": false,
   "type": "module",
   "license": "MIT",
-  "keywords": ["design-tokens", "storybook", "tailwindcss", "ai-coding", "component-library", "harness"],
+  "keywords": [
+    "design-tokens",
+    "storybook",
+    "tailwindcss",
+    "ai-coding",
+    "component-library",
+    "harness"
+  ],
   "bin": {
     "harness": "./bin/harness.mjs"
   },
@@ -38,6 +45,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ant-design/colors": "^8.0.1",
     "@radix-ui/react-slot": "^1.2.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

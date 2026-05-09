@@ -1,6 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
+import { autoClassControls } from "@/design-tokens/tw-class-audit";
+import buttonSrc from "./button.tsx?raw";
 import { Button } from "./button";
+
+const audit = autoClassControls(buttonSrc);
 
 const meta = {
   title: "Button",
@@ -17,6 +21,7 @@ const meta = {
     size: "default",
     disabled: false,
     type: "button",
+    ...audit.args,
   },
   argTypes: {
     variant: {
@@ -34,7 +39,19 @@ const meta = {
     children: { control: "text" },
     asChild: { table: { disable: true } },
     className: { table: { disable: true } },
+    ...audit.argTypes,
   },
+  render: (args) => (
+    <Button
+      variant={args.variant}
+      size={args.size}
+      disabled={args.disabled}
+      type={args.type}
+      className={audit.buildClassName(args as unknown as Record<string, string>)}
+    >
+      {args.children}
+    </Button>
+  ),
 } satisfies Meta;
 
 export default meta;

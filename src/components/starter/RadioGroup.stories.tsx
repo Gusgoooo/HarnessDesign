@@ -1,7 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
+import { autoClassControls } from "@/design-tokens/tw-class-audit";
+import radioSrc from "./radio-group.tsx?raw";
 import { Label } from "./label";
 import { RadioGroup, RadioGroupItem } from "./radio-group";
+
+const audit = autoClassControls(radioSrc);
 
 const meta = {
   title: "RadioGroup",
@@ -9,8 +13,10 @@ const meta = {
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({}),
   },
+  args: { ...audit.args },
   argTypes: {
     className: { table: { disable: true } },
+    ...audit.argTypes,
   },
 } satisfies Meta;
 
@@ -18,8 +24,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  render: () => (
-    <RadioGroup defaultValue="comfortable" className="flex max-w-sm flex-col gap-sm">
+  render: (args) => (
+    <RadioGroup defaultValue="comfortable" className={`flex max-w-sm flex-col gap-sm ${audit.buildClassName(args as unknown as Record<string, string>)}`}>
       <div className="flex items-center gap-xs">
         <RadioGroupItem value="default" id="rg-default" />
         <Label htmlFor="rg-default">默认密度</Label>

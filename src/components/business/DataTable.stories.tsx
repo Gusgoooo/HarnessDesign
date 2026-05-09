@@ -281,12 +281,15 @@ export const SuperComposite: StoryObj<SinkArgs> = {
   args: {
     density: "default",
     variant: "striped",
+
     /** 演示：第 2 列文本列纵向浅底（与列标题文案无关，AI 换列序后仍按索引生效） */
-    columnBandIndex: 1,
+    columnBandIndex: null,
+
     ...layoutDefaults,
     outerPadding: "space-0",
-    cardPadding: "space-2",
-    shadow: "elevation-none"
+    cardPadding: "space-0",
+    shadow: "elevation-none",
+    cardBackgroundToken: "color-bg-container"
   },
   argTypes: {
     density: {

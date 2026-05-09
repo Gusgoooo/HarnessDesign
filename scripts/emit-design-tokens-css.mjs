@@ -230,6 +230,7 @@ function toCSS(vars, selector) {
   for (const [name, value] of Object.entries(vars)) {
     if (value === "" || value == null) continue;
     if (themeVarNames.has(name)) continue;
+    if (/\./.test(name)) continue;
     lines.push(`  --${name}: ${value};`);
   }
   lines.push("}");
