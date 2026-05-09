@@ -476,6 +476,7 @@ function genShadcnAliasTokens(colorMap) {
     accent: colorMap.colorFillSecondary,
     "accent-foreground": colorMap.colorText,
     destructive: colorMap.colorError,
+    "destructive-foreground": "#fff",
     border: colorMap.colorBorderSecondary,
     input: colorMap.colorBorder,
     ring: colorMap.colorPrimary,
