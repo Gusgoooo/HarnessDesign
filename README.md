@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/AI--first-Cursor%20%7C%20GPT%20%7C%20Claude-blueviolet?style=flat-square" alt="AI-first" />
 </p>
 
-<h1 align="center">HarnessUI</h1>
+<h1 align="center">HarnessUI &nbsp;<a href="./README.zh-CN.md"><img src="https://img.shields.io/badge/lang-简体中文-red?style=flat-square" alt="中文文档" /></a></h1>
 
 <p align="center">
   <strong>The AI-first component design kit that turns design tokens into production-ready, AI-governed UI libraries.</strong>
