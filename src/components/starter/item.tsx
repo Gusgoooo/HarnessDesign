@@ -41,7 +41,7 @@ const itemVariants = cva(
       },
       size: {
         default: "gap-base p-base ",
-        sm: "gap-2.5 px-base py-sm",
+        sm: "gap-sm px-base py-sm",
       },
     },
     defaultVariants: {
@@ -77,9 +77,9 @@ const itemMediaVariants = cva(
     variants: {
       variant: {
         default: "bg-transparent",
-        icon: "bg-muted size-8 rounded-sm border [&_svg:not([class*='size-'])]:size-4",
+        icon: "bg-muted size-xl rounded-sm border [&_svg:not([class*='size-'])]:size-base",
         image:
-          "size-10 overflow-hidden rounded-sm [&_img]:size-full [&_img]:object-cover",
+          "size-xl overflow-hidden rounded-sm [&_img]:size-full [&_img]:object-cover",
       },
     },
     defaultVariants: {

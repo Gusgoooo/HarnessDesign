@@ -128,7 +128,13 @@ const FONT_SIZE_LINE_HEIGHT = {
 };
 
 // Opacity → @theme --opacity-* with direct values (semantic names)
-const OPACITY_KEYS = ["opacity-disabled", "opacity-muted", "opacity-subtle"];
+const OPACITY_KEYS = [
+  "opacity-transparent",
+  "opacity-subtle",
+  "opacity-disabled",
+  "opacity-muted",
+  "opacity-opaque",
+];
 
 // Motion duration → @theme --transition-duration-* for Tailwind's duration-* utilities
 const MOTION_MAP = {
@@ -136,6 +142,8 @@ const MOTION_MAP = {
   "motion-duration-150": "transition-duration-150",
   "motion-duration-mid": "transition-duration-mid",
   "motion-duration-slow": "transition-duration-slow",
+  "motion-duration-long": "transition-duration-long",
+  "motion-duration-whole": "transition-duration-whole",
 };
 
 // Build the set of @theme variable names (without --) to exclude from :root/.dark

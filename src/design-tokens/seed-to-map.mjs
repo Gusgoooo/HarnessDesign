@@ -751,9 +751,11 @@ export function deriveSeedToMap(seed, { dark = false, customSeeds = {}, fixedAli
   }
 
   // --- Alias layer: fixed aliases (opacity, font-weight, ring, etc.) ---
+  if (fixedAliases.opacityTransparent != null) vars["opacity-transparent"] = fixedAliases.opacityTransparent;
+  if (fixedAliases.opacitySubtle != null) vars["opacity-subtle"] = fixedAliases.opacitySubtle;
   if (fixedAliases.opacityDisabled != null) vars["opacity-disabled"] = fixedAliases.opacityDisabled;
   if (fixedAliases.opacityMuted != null) vars["opacity-muted"] = fixedAliases.opacityMuted;
-  if (fixedAliases.opacitySubtle != null) vars["opacity-subtle"] = fixedAliases.opacitySubtle;
+  if (fixedAliases.opacityOpaque != null) vars["opacity-opaque"] = fixedAliases.opacityOpaque;
   if (fixedAliases.fontWeightMedium != null) vars["font-weight-medium"] = fixedAliases.fontWeightMedium;
   if (fixedAliases.fontWeightSemibold != null) vars["font-weight-semibold"] = fixedAliases.fontWeightSemibold;
   if (fixedAliases.ringWidth != null) vars["ring-width"] = fixedAliases.ringWidth;
@@ -761,6 +763,8 @@ export function deriveSeedToMap(seed, { dark = false, customSeeds = {}, fixedAli
   if (fixedAliases.paddingXXXS != null) vars["padding-xxxs"] = fixedAliases.paddingXXXS;
   if (fixedAliases.textareaMinHeight != null) vars["textarea-min-height"] = fixedAliases.textareaMinHeight;
   if (fixedAliases.motionDuration150 != null) vars["motion-duration-150"] = fixedAliases.motionDuration150;
+  if (fixedAliases.motionDurationLong != null) vars["motion-duration-long"] = fixedAliases.motionDurationLong;
+  if (fixedAliases.motionDurationWhole != null) vars["motion-duration-whole"] = fixedAliases.motionDurationWhole;
 
   // Border width (kept for compatibility)
   vars["border-width-hairline"] = `${seed.lineWidth}px`;

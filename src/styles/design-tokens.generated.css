@@ -77,15 +77,19 @@
   --font-size-3xl: 30px;
 
   /* Opacity — semantic names for disabled / muted / subtle states */
+  --opacity-transparent: 0;
+  --opacity-subtle: 0.4;
   --opacity-disabled: 0.5;
   --opacity-muted: 0.7;
-  --opacity-subtle: 0.4;
+  --opacity-opaque: 1;
 
   /* Motion duration — maps to Tailwind duration-* utilities */
   --transition-duration-fast: 0.1s;
   --transition-duration-150: 0.15s;
   --transition-duration-mid: 0.2s;
   --transition-duration-slow: 0.3s;
+  --transition-duration-long: 0.5s;
+  --transition-duration-whole: 1s;
 
   /* Max-width scale — enables Tailwind max-w-xs/sm/md/lg/xl/... utilities */
   --max-width-xs: 20rem;
@@ -288,6 +292,8 @@
   --padding-xxxs: 2px;
   --textarea-min-height: 80px;
   --motion-duration-150: 0.15s;
+  --motion-duration-long: 0.5s;
+  --motion-duration-whole: 1s;
   --border-width-hairline: 1px;
   --border-width-0: 0;
   --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
@@ -502,6 +508,8 @@
   --padding-xxxs: 2px;
   --textarea-min-height: 80px;
   --motion-duration-150: 0.15s;
+  --motion-duration-long: 0.5s;
+  --motion-duration-whole: 1s;
   --border-width-hairline: 1px;
   --border-width-0: 0;
   --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;

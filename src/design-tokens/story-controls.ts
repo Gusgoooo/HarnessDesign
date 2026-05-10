@@ -212,19 +212,31 @@ export const DURATION_MAP: Record<string, string> = {
   "150": "duration-150",
   mid: "duration-mid",
   slow: "duration-slow",
+  long: "duration-long",
+  whole: "duration-whole",
 };
 export const DURATION_LABEL: Record<string, string> = {
-  fast: "fast · 0.1s", "150": "150 · 0.15s", mid: "mid · 0.2s", slow: "slow · 0.3s",
+  fast: "fast · 0.1s",
+  "150": "150 · 0.15s",
+  mid: "mid · 0.2s",
+  slow: "slow · 0.3s",
+  long: "long · 0.5s",
+  whole: "whole · 1s",
 };
 
 export const OPACITY_MAP: Record<string, string> = {
+  transparent: "opacity-transparent",
+  subtle: "opacity-subtle",
   disabled: "opacity-disabled",
   muted: "opacity-muted",
-  subtle: "opacity-subtle",
-  full: "opacity-100",
+  opaque: "opacity-opaque",
 };
 export const OPACITY_LABEL: Record<string, string> = {
-  disabled: "disabled · 0.5", muted: "muted · 0.7", subtle: "subtle · 0.4", full: "full · 1",
+  transparent: "transparent · 0",
+  subtle: "subtle · 0.4",
+  disabled: "disabled · 0.5",
+  muted: "muted · 0.7",
+  opaque: "opaque · 1",
 };
 
 /* ------------------------------------------------------------------ */

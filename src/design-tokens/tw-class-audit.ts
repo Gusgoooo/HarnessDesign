@@ -28,7 +28,7 @@ const TOKEN_SHADOW: Record<string, string> = {
 };
 
 const TOKEN_FONT_SIZE: Record<string, string> = {
-  xs: "12px", sm: "14px", base: "16px", lg: "16px",
+  xs: "12px", sm: "14px", base: "16px", lg: "18px",
   xl: "20px", "2xl": "24px", "3xl": "30px",
 };
 
@@ -37,11 +37,20 @@ const TOKEN_FONT_WEIGHT: Record<string, string> = {
 };
 
 const TOKEN_OPACITY: Record<string, string> = {
-  disabled: "0.5", muted: "0.7", subtle: "0.4",
+  transparent: "0",
+  subtle: "0.4",
+  disabled: "0.5",
+  muted: "0.7",
+  opaque: "1",
 };
 
 const TOKEN_DURATION: Record<string, string> = {
-  fast: "0.1s", "150": "0.15s", mid: "0.2s", slow: "0.3s",
+  fast: "0.1s",
+  "150": "0.15s",
+  mid: "0.2s",
+  slow: "0.3s",
+  long: "0.5s",
+  whole: "1s",
 };
 
 /** Tailwind 数字间距 → px（用于找等价 token） */
@@ -147,10 +156,114 @@ export type AuditEntry = {
   adjustable: boolean;
 };
 
-type TokenDef = {
-  tokens: Record<string, string>;
-  twLookup: Record<string, string>;
-};
+
+function parsePx(css: string): number | null {
+  const m = /^([\d.]+)px$/i.exec(String(css).trim());
+  if (!m) return null;
+  const n = Number(m[1]);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** 在给定语义 token→px 映射中，选择与目标最接近的 key；并列时优先较大 px（「就近偏大」）。 */
+export function nearestTokenKeyPreferLarger(
+  targetPx: number,
+  tokens: Record<string, string>,
+): string | null {
+  let bestKey: string | null = null;
+  let bestDist = Infinity;
+  let bestPx = -Infinity;
+  for (const [k, css] of Object.entries(tokens)) {
+    const px = parsePx(css);
+    if (px == null) continue;
+    const dist = Math.abs(targetPx - px);
+    if (dist < bestDist || (dist === bestDist && px > bestPx)) {
+      bestKey = k;
+      bestDist = dist;
+      bestPx = px;
+    }
+  }
+  return bestKey;
+}
+
+function parseCssSeconds(s: string): number | null {
+  const t = String(s).trim().toLowerCase();
+  const m = /^([\d.]+)s$/i.exec(t);
+  if (!m) return null;
+  const n = Number(m[1]);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** 不透明度的绝对值在 [0,1]，并列时优先较大的语义值（更「实」的一侧）。 */
+function nearestOpacitySemantic(target: number): string | null {
+  let bestK: string | null = null;
+  let bestD = Infinity;
+  let bestN = -Infinity;
+  for (const [k, v] of Object.entries(TOKEN_OPACITY)) {
+    const n = Number(String(v));
+    if (!Number.isFinite(n)) continue;
+    const d = Math.abs(target - n);
+    if (d < bestD || (d === bestD && n > bestN)) {
+      bestK = k;
+      bestD = d;
+      bestN = n;
+    }
+  }
+  return bestK;
+}
+
+/** 动画时长就近语义（并列取较大时长）。 */
+function nearestDurationSemantic(targetSec: number): string | null {
+  let bestK: string | null = null;
+  let bestD = Infinity;
+  let bestS = -Infinity;
+  for (const [k, v] of Object.entries(TOKEN_DURATION)) {
+    const s = parseCssSeconds(v);
+    if (s == null) continue;
+    const d = Math.abs(targetSec - s);
+    if (d < bestD || (d === bestD && s > bestS)) {
+      bestK = k;
+      bestD = d;
+      bestS = s;
+    }
+  }
+  return bestK;
+}
+
+/** 字号：px 映射上的就近偏大（仅用于非精确匹配）。 */
+function nearestFontSizeSemantic(targetPx: number): string | null {
+  let bestKey: string | null = null;
+  let bestDist = Infinity;
+  let bestPx = -Infinity;
+  for (const [k, cssv] of Object.entries(TOKEN_FONT_SIZE)) {
+    const px = parsePx(cssv);
+    if (px == null) continue;
+    const d = Math.abs(targetPx - px);
+    if (d < bestDist || (d === bestDist && px > bestPx)) {
+      bestKey = k;
+      bestDist = d;
+      bestPx = px;
+    }
+  }
+  return bestKey;
+}
+
+/** 字重数值就近语义（并列取较大粗细）。 */
+function nearestFontWeightSemantic(target: number): string | null {
+  let bestK: string | null = null;
+  let bestD = Infinity;
+  let bestN = -Infinity;
+  for (const [k, v] of Object.entries(TOKEN_FONT_WEIGHT)) {
+    const n = Number(v);
+    if (!Number.isFinite(n)) continue;
+    const d = Math.abs(target - n);
+    if (d < bestD || (d === bestD && n > bestN)) {
+      bestK = k;
+      bestD = d;
+      bestN = n;
+    }
+  }
+  return bestK;
+}
 
 function findEquivalent(
   cssVal: string,
@@ -162,7 +275,66 @@ function findEquivalent(
   return null;
 }
 
-const SPACING_PREFIXES = /^(p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|gap|gap-x|gap-y|space-x|space-y|inset-x|inset-y|inset|top|right|bottom|left)-(.+)$/;
+function auditSpacingOrSizing(
+  cls: string,
+  prefix: string,
+  val: string,
+): AuditEntry | null {
+  const skip = new Set([
+    "auto", "full", "screen", "fit", "min", "max", "prose",
+  ]);
+  if (skip.has(val)) return null;
+  if (val.includes("/")) return null;
+  if (val.startsWith("[")) return arb(cls, "spacing", prefix, val);
+
+  const isSizing = /^(size|min-w|max-w|min-h|max-h|w|h)$/.test(prefix);
+  if (isSizing && !(val in TW_NUM_SPACING_PX) && !(val in TOKEN_SPACING)) {
+    return null;
+  }
+  if (
+    !isSizing
+    && !(val in TW_NUM_SPACING_PX)
+    && !(val in TOKEN_SPACING)
+  ) {
+    return null;
+  }
+
+  if (val in TOKEN_SPACING) {
+    return {
+      raw: cls,
+      category: "spacing",
+      prefix,
+      value: val,
+      isToken: true,
+      cssValue: TOKEN_SPACING[val],
+      equivalentToken: null,
+      adjustable: true,
+    };
+  }
+
+  const tw = TW_NUM_SPACING_PX[val];
+  if (!tw) return null;
+
+  const px = parsePx(tw);
+  const exactName = findEquivalent(tw, TOKEN_SPACING);
+  const nearest =
+    px != null ? nearestTokenKeyPreferLarger(px, TOKEN_SPACING) : null;
+  const equiv = exactName ?? nearest;
+
+  return {
+    raw: cls,
+    category: "spacing",
+    prefix,
+    value: val,
+    isToken: false,
+    cssValue: tw,
+    equivalentToken: equiv,
+    adjustable: true,
+  };
+}
+
+const SPACING_PREFIXES =
+  /^(p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|gap|gap-x|gap-y|space-x|space-y|inset-x|inset-y|inset|top|right|bottom|left|size|min-w|max-w|min-h|max-h|w|h)-(.+)$/;
 const RADIUS_RE = /^rounded(?:-(tl|tr|bl|br|t|r|b|l|s|e|ss|se|es|ee))?(?:-(.+))?$/;
 
 export function auditClass(cls: string): AuditEntry | null {
@@ -173,19 +345,12 @@ export function auditClass(cls: string): AuditEntry | null {
     return null;
   }
 
-  // --- Spacing ---
+  // --- Spacing / sizing utilities（仅语义 Scale 写入源码；原生数字 scale 只做就近语义映射）
   const spM = cls.match(SPACING_PREFIXES);
   if (spM) {
     const [, prefix, val] = spM;
-    if (val === "auto" || val === "full" || val === "screen" || val === "fit" || val === "min" || val === "max") return null;
-    if (val.includes("/")) return null;
-    if (val.startsWith("[")) return arb(cls, "spacing", prefix, val);
-    const isSemanticToken = val in TOKEN_SPACING;
-    const isNativeNum = val in TW_NUM_SPACING_PX;
-    const isToken = isSemanticToken || isNativeNum;
-    const cssVal = isSemanticToken ? TOKEN_SPACING[val] : TW_NUM_SPACING_PX[val] ?? "?";
-    const eq = isToken ? null : findEquivalent(cssVal, TOKEN_SPACING);
-    return { raw: cls, category: "spacing", prefix, value: val, isToken, cssValue: cssVal, equivalentToken: eq, adjustable: true };
+    const row = auditSpacingOrSizing(cls, prefix, val);
+    if (row) return row;
   }
 
   // --- Border Radius ---
@@ -195,10 +360,26 @@ export function auditClass(cls: string): AuditEntry | null {
     const val = rdM[2] ?? "DEFAULT";
     const prefix = sub ? `rounded-${sub}` : "rounded";
     if (val.startsWith("[")) return arb(cls, "radius", prefix, val);
-    const isToken = val in TOKEN_RADIUS;
-    const cssVal = isToken ? TOKEN_RADIUS[val] : TW_NUM_RADIUS_PX[val] ?? "?";
-    const eq = isToken ? null : findEquivalent(cssVal, TOKEN_RADIUS);
-    return { raw: cls, category: "radius", prefix, value: val, isToken, cssValue: cssVal, equivalentToken: eq, adjustable: true };
+    const cssVal =
+      val in TOKEN_RADIUS
+        ? TOKEN_RADIUS[val]
+        : (TW_NUM_RADIUS_PX[val] ?? "?");
+    const px = parsePx(cssVal);
+    const exactName = findEquivalent(cssVal, TOKEN_RADIUS);
+    const nearest =
+      px != null ? nearestTokenKeyPreferLarger(px, TOKEN_RADIUS) : null;
+    const equiv = exactName ?? nearest;
+    const isToken = exactName !== null && exactName === val;
+    return {
+      raw: cls,
+      category: "radius",
+      prefix,
+      value: val,
+      isToken,
+      cssValue: cssVal,
+      equivalentToken: isToken ? null : equiv,
+      adjustable: true,
+    };
   }
 
   // --- Shadow ---
@@ -207,27 +388,65 @@ export function auditClass(cls: string): AuditEntry | null {
     const val = shM[1] ?? "DEFAULT";
     if (val.startsWith("[")) return arb(cls, "shadow", "shadow", val);
     const isToken = val in TOKEN_SHADOW;
-    return { raw: cls, category: "shadow", prefix: "shadow", value: val, isToken, cssValue: val, equivalentToken: null, adjustable: true };
+    return {
+      raw: cls,
+      category: "shadow",
+      prefix: "shadow",
+      value: val,
+      isToken,
+      cssValue: val,
+      equivalentToken: null,
+      adjustable: isToken,
+    };
   }
 
   // --- Font Size ---
   const fsM = cls.match(/^text-(xs|sm|base|lg|xl|[2-9]xl)$/);
   if (fsM) {
     const val = fsM[1];
-    const isToken = val in TOKEN_FONT_SIZE;
     const cssVal = TW_NUM_FONT_SIZE_PX[val] ?? "?";
-    const eq = isToken ? null : findEquivalent(cssVal, TOKEN_FONT_SIZE);
-    return { raw: cls, category: "fontSize", prefix: "text", value: val, isToken, cssValue: cssVal, equivalentToken: eq, adjustable: true };
+    const px = parsePx(cssVal);
+    const exactName = findEquivalent(cssVal, TOKEN_FONT_SIZE);
+    const nearest =
+      px != null ? nearestFontSizeSemantic(px) : null;
+    const equiv = exactName ?? nearest;
+    const isToken = exactName !== null && exactName === val;
+    return {
+      raw: cls,
+      category: "fontSize",
+      prefix: "text",
+      value: val,
+      isToken,
+      cssValue: cssVal,
+      equivalentToken: isToken ? null : equiv,
+      adjustable: true,
+    };
   }
 
   // --- Font Weight ---
-  const fwM = cls.match(/^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black)$/);
+  const fwM = cls.match(
+    /^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black)$/,
+  );
   if (fwM) {
     const val = fwM[1];
-    const isToken = val in TOKEN_FONT_WEIGHT;
-    const cssVal = TW_FONT_WEIGHT_NUM[val] ?? "?";
-    const eq = isToken ? null : findEquivalent(cssVal, TOKEN_FONT_WEIGHT);
-    return { raw: cls, category: "fontWeight", prefix: "font", value: val, isToken, cssValue: cssVal, equivalentToken: eq, adjustable: true };
+    const cssStr = TW_FONT_WEIGHT_NUM[val] ?? "?";
+    const n = Number(cssStr);
+    const exactName = findEquivalent(cssStr, TOKEN_FONT_WEIGHT);
+    const nearest = Number.isFinite(n)
+      ? nearestFontWeightSemantic(n)
+      : null;
+    const equiv = exactName ?? nearest;
+    const isToken = exactName !== null && exactName === val;
+    return {
+      raw: cls,
+      category: "fontWeight",
+      prefix: "font",
+      value: val,
+      isToken,
+      cssValue: cssStr,
+      equivalentToken: isToken ? null : equiv,
+      adjustable: true,
+    };
   }
 
   // --- Opacity ---
@@ -235,12 +454,40 @@ export function auditClass(cls: string): AuditEntry | null {
   if (opM) {
     const val = opM[1];
     if (val.startsWith("[")) return arb(cls, "opacity", "opacity", val);
-    const isSemanticToken = val in TOKEN_OPACITY;
-    const isNativeNum = val in TW_NUM_OPACITY;
-    const isToken = isSemanticToken || isNativeNum;
-    const cssVal = isSemanticToken ? TOKEN_OPACITY[val] : TW_NUM_OPACITY[val] ?? "?";
-    const eq = isToken ? null : findEquivalent(cssVal, TOKEN_OPACITY);
-    return { raw: cls, category: "opacity", prefix: "opacity", value: val, isToken, cssValue: cssVal, equivalentToken: eq, adjustable: true };
+    if (val in TOKEN_OPACITY) {
+      return {
+        raw: cls,
+        category: "opacity",
+        prefix: "opacity",
+        value: val,
+        isToken: true,
+        cssValue: TOKEN_OPACITY[val],
+        equivalentToken: null,
+        adjustable: true,
+      };
+    }
+    const cssStr =
+      val in TW_NUM_OPACITY ? TW_NUM_OPACITY[val] ?? "?" : "?";
+    const n = Number(cssStr);
+    const exactName =
+      cssStr !== "?"
+        ? findEquivalent(cssStr, TOKEN_OPACITY)
+        : null;
+    const nearest = Number.isFinite(n)
+      ? nearestOpacitySemantic(n)
+      : null;
+    const equiv = exactName ?? nearest;
+    const isToken = false;
+    return {
+      raw: cls,
+      category: "opacity",
+      prefix: "opacity",
+      value: val,
+      isToken,
+      cssValue: cssStr,
+      equivalentToken: equiv,
+      adjustable: true,
+    };
   }
 
   // --- Duration ---
@@ -248,12 +495,27 @@ export function auditClass(cls: string): AuditEntry | null {
   if (duM) {
     const val = duM[1];
     if (val.startsWith("[")) return arb(cls, "duration", "duration", val);
-    const isSemanticToken = val in TOKEN_DURATION;
-    const isNativeNum = val in TW_NUM_DURATION_MS;
-    const isToken = isSemanticToken || isNativeNum;
-    const cssVal = isSemanticToken ? TOKEN_DURATION[val] : TW_NUM_DURATION_MS[val] ?? "?";
-    const eq = isToken ? null : findEquivalent(cssVal, TOKEN_DURATION);
-    return { raw: cls, category: "duration", prefix: "duration", value: val, isToken, cssValue: cssVal, equivalentToken: eq, adjustable: true };
+    const cssStr =
+      val in TOKEN_DURATION
+        ? TOKEN_DURATION[val]
+        : (TW_NUM_DURATION_MS[val] ?? "?");
+    const secs = parseCssSeconds(cssStr);
+    const exactName =
+      cssStr !== "?" ? findEquivalent(cssStr, TOKEN_DURATION) : null;
+    const nearest =
+      secs != null ? nearestDurationSemantic(secs) : null;
+    const equiv = exactName ?? nearest;
+    const isToken = exactName !== null && exactName === val;
+    return {
+      raw: cls,
+      category: "duration",
+      prefix: "duration",
+      value: val,
+      isToken,
+      cssValue: cssStr,
+      equivalentToken: isToken ? null : equiv,
+      adjustable: true,
+    };
   }
 
   // --- Text Color ---
@@ -300,14 +562,9 @@ type CategoryMeta = {
   makeClass: (prefix: string, key: string) => string;
 };
 
-const ALL_SPACING_TOKENS: Record<string, string> = {
-  ...TOKEN_SPACING,
-  ...TW_NUM_SPACING_PX,
-};
-
 const CATEGORY_META: Record<string, CategoryMeta> = {
   spacing: {
-    tokens: ALL_SPACING_TOKENS,
+    tokens: TOKEN_SPACING,
     label: "间距",
     makeClass: (p, k) => (k === "0" ? `${p}-0` : `${p}-${k}`),
   },
@@ -332,12 +589,12 @@ const CATEGORY_META: Record<string, CategoryMeta> = {
     makeClass: (_p, k) => `font-${k}`,
   },
   opacity: {
-    tokens: { ...TOKEN_OPACITY, ...TW_NUM_OPACITY },
+    tokens: TOKEN_OPACITY,
     label: "透明度",
     makeClass: (_p, k) => `opacity-${k}`,
   },
   duration: {
-    tokens: { ...TOKEN_DURATION, ...TW_NUM_DURATION_MS },
+    tokens: TOKEN_DURATION,
     label: "动画时长",
     makeClass: (_p, k) => `duration-${k}`,
   },
@@ -345,7 +602,6 @@ const CATEGORY_META: Record<string, CategoryMeta> = {
 
 function makeLabels(
   tokens: Record<string, string>,
-  currentValue: string | null,
   equivalentToken: string | null,
 ): Record<string, string> {
   const labels: Record<string, string> = {};
@@ -353,9 +609,6 @@ function makeLabels(
     let lbl = `${k} · ${v}`;
     if (equivalentToken === k) lbl += " ← 等值";
     labels[k] = lbl;
-  }
-  if (currentValue && !(currentValue in tokens)) {
-    labels[currentValue] = `⚠️ ${currentValue} (非 Token)`;
   }
   return labels;
 }
@@ -403,11 +656,8 @@ export function autoClassControls(source: string): AutoControlsResult {
       : entry.equivalentToken ?? entry.value;
 
     const options = [...Object.keys(catMeta.tokens)];
-    if (!options.includes(entry.value) && !entry.isToken) {
-      options.unshift(entry.value);
-    }
 
-    const labels = makeLabels(catMeta.tokens, entry.isToken ? null : entry.value, entry.equivalentToken);
+    const labels = makeLabels(catMeta.tokens, entry.equivalentToken);
 
     const desc = entry.isToken
       ? `${catMeta.label} · ${entry.raw}`
