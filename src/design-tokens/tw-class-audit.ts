@@ -353,6 +353,7 @@ export type AutoControlsResult = {
   args: Record<string, string>;
   argTypes: Record<string, unknown>;
   buildClassName: (runtimeArgs: Record<string, string>) => string;
+  resolveArgTypes: (runtimeArgs: Record<string, string>) => Record<string, unknown>;
   /** 非 token 条目总数 */
   nonTokenCount: number;
 };

@@ -30,6 +30,19 @@ function rgbToHex(r, g, b) {
   );
 }
 
+function relativeLuminance(hex) {
+  const [r, g, b] = hexToRgb(hex).map((c) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrastForeground(bgHex, lightText = "#fff", darkText = "#18181b") {
+  const lum = relativeLuminance(bgHex);
+  return lum > 0.35 ? darkText : lightText;
+}
+
 function alpha(colorHex, a) {
   const [r, g, b] = hexToRgb(
     colorHex.startsWith("#") ? colorHex : `#${colorHex}`,
@@ -468,7 +481,7 @@ function genShadcnAliasTokens(colorMap) {
     popover: colorMap.colorBgElevated,
     "popover-foreground": colorMap.colorText,
     primary: colorMap.colorPrimary,
-    "primary-foreground": colorMap.colorWhite,
+    "primary-foreground": contrastForeground(colorMap.colorPrimary),
     secondary: colorMap.colorFillSecondary,
     "secondary-foreground": colorMap.colorText,
     muted: colorMap.colorBgLayout,
@@ -476,7 +489,7 @@ function genShadcnAliasTokens(colorMap) {
     accent: colorMap.colorFillSecondary,
     "accent-foreground": colorMap.colorText,
     destructive: colorMap.colorError,
-    "destructive-foreground": "#fff",
+    "destructive-foreground": contrastForeground(colorMap.colorError),
     border: colorMap.colorBorderSecondary,
     input: colorMap.colorBorder,
     ring: colorMap.colorPrimary,
@@ -492,7 +505,7 @@ function genSidebarAliasTokens(colorMap) {
     sidebar: colorMap.colorBgElevated,
     "sidebar-foreground": colorMap.colorText,
     "sidebar-primary": colorMap.colorPrimary,
-    "sidebar-primary-foreground": colorMap.colorWhite,
+    "sidebar-primary-foreground": contrastForeground(colorMap.colorPrimary),
     "sidebar-accent": colorMap.colorFillSecondary,
     "sidebar-accent-foreground": colorMap.colorText,
     "sidebar-border": colorMap.colorBorderSecondary,
