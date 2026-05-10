@@ -43,20 +43,21 @@ export const Default: Story = {
     return (
       <Dialog defaultOpen={args.defaultOpen}>
         <div className="flex min-h-screen items-center justify-center">
-        <DialogTrigger className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm hover:bg-accent">
-          打开对话框
-        </DialogTrigger>
+          <DialogTrigger asChild>
+            <Button variant="outline">打开对话框</Button>
+          </DialogTrigger>
         </div>
         <DialogContent className={audit.buildClassName(args)}>
           <DialogHeader>
-            <DialogTitle>确认操作</DialogTitle>
-            <DialogDescription>此处可放置说明文案；点击遮罩或按 Esc 关闭。</DialogDescription>
+            <DialogTitle>对话框标题</DialogTitle>
+            <DialogDescription>这是一段描述文本。点击遮罩或按 Esc 关闭。</DialogDescription>
           </DialogHeader>
+          <div className="py-base text-sm">对话框内容区域</div>
           <DialogFooter>
-            <DialogClose className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm hover:bg-accent">
-              取消
+            <DialogClose asChild>
+              <Button variant="outline">取消</Button>
             </DialogClose>
-            <Button type="button">确定</Button>
+            <Button type="button">确认</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
