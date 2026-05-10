@@ -152,6 +152,7 @@ for (const dest of Object.values(FONT_SIZE_MAP)) {
 }
 for (const key of OPACITY_KEYS) themeVarNames.add(key);
 for (const dest of Object.values(MOTION_MAP)) themeVarNames.add(dest);
+themeVarNames.add("spacing");
 
 // ─── Output builders ────────────────────────────────────────────────────────
 
@@ -188,7 +189,12 @@ function buildThemeBlock(vars) {
   }
 
   lines.push("");
-  lines.push("  /* Spacing scale — direct values from padding tokens */");
+  lines.push("  /* Spacing base — enables all Tailwind numeric spacing (p-1.5, gap-2.5, etc.) */");
+  const sizeUnit = vars["__sizeUnit"];
+  lines.push(`  --spacing: ${sizeUnit || "4px"};`);
+
+  lines.push("");
+  lines.push("  /* Spacing scale — semantic aliases from padding tokens */");
   for (const [srcKey, destKey] of Object.entries(SPACING_MAP)) {
     const val = vars[srcKey];
     if (val != null && val !== "") lines.push(`  --${destKey}: ${val};`);
@@ -239,6 +245,7 @@ function toCSS(vars, selector) {
   const lines = [`${selector} {`];
   for (const [name, value] of Object.entries(vars)) {
     if (value === "" || value == null) continue;
+    if (name.startsWith("__")) continue;
     if (themeVarNames.has(name)) continue;
     if (/\./.test(name)) continue;
     lines.push(`  --${name}: ${value};`);

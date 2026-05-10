@@ -51,7 +51,10 @@
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
 
-  /* Spacing scale — direct values from padding tokens */
+  /* Spacing base — enables all Tailwind numeric spacing (p-1.5, gap-2.5, etc.) */
+  --spacing: 4px;
+
+  /* Spacing scale — semantic aliases from padding tokens */
   --spacing-xxxs: 2px;
   --spacing-xxs: 4px;
   --spacing-xs: 8px;

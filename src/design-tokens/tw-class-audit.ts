@@ -179,8 +179,10 @@ export function auditClass(cls: string): AuditEntry | null {
     const [, prefix, val] = spM;
     if (val === "auto" || val === "full" || val === "screen" || val === "fit" || val === "min" || val === "max") return null;
     if (val.startsWith("[")) return arb(cls, "spacing", prefix, val);
-    const isToken = val in TOKEN_SPACING;
-    const cssVal = isToken ? TOKEN_SPACING[val] : TW_NUM_SPACING_PX[val] ?? "?";
+    const isSemanticToken = val in TOKEN_SPACING;
+    const isNativeNum = val in TW_NUM_SPACING_PX;
+    const isToken = isSemanticToken || isNativeNum;
+    const cssVal = isSemanticToken ? TOKEN_SPACING[val] : TW_NUM_SPACING_PX[val] ?? "?";
     const eq = isToken ? null : findEquivalent(cssVal, TOKEN_SPACING);
     return { raw: cls, category: "spacing", prefix, value: val, isToken, cssValue: cssVal, equivalentToken: eq, adjustable: true };
   }
@@ -293,9 +295,14 @@ type CategoryMeta = {
   makeClass: (prefix: string, key: string) => string;
 };
 
+const ALL_SPACING_TOKENS: Record<string, string> = {
+  ...TOKEN_SPACING,
+  ...TW_NUM_SPACING_PX,
+};
+
 const CATEGORY_META: Record<string, CategoryMeta> = {
   spacing: {
-    tokens: TOKEN_SPACING,
+    tokens: ALL_SPACING_TOKENS,
     label: "间距",
     makeClass: (p, k) => (k === "0" ? `${p}-0` : `${p}-${k}`),
   },

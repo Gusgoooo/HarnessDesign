@@ -802,5 +802,8 @@ export function deriveSeedToMap(seed, { dark = false, customSeeds = {}, fixedAli
   // Elevation "none" alias
   vars["elevation-none"] = "none";
 
+  // Internal metadata for @theme generation
+  vars["__sizeUnit"] = `${seed.sizeUnit}px`;
+
   return vars;
 }
