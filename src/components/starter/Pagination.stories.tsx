@@ -8,6 +8,8 @@ const audit = autoClassControls(componentSrc);
 
 type Args = { [k: string]: string };
 
+const noop = (e: React.MouseEvent) => e.preventDefault();
+
 const meta = {
   title: "Pagination",
   tags: ["autodocs"],
@@ -26,12 +28,12 @@ export const Default: Story = {
     return (
       <Comp.Pagination className={audit.buildClassName(args)}>
         <Comp.PaginationContent>
-          <Comp.PaginationItem><Comp.PaginationPrevious href="#" /></Comp.PaginationItem>
-          <Comp.PaginationItem><Comp.PaginationLink href="#">1</Comp.PaginationLink></Comp.PaginationItem>
-          <Comp.PaginationItem><Comp.PaginationLink href="#" isActive>2</Comp.PaginationLink></Comp.PaginationItem>
-          <Comp.PaginationItem><Comp.PaginationLink href="#">3</Comp.PaginationLink></Comp.PaginationItem>
+          <Comp.PaginationItem><Comp.PaginationPrevious href="#" onClick={noop} /></Comp.PaginationItem>
+          <Comp.PaginationItem><Comp.PaginationLink href="#" onClick={noop}>1</Comp.PaginationLink></Comp.PaginationItem>
+          <Comp.PaginationItem><Comp.PaginationLink href="#" onClick={noop} isActive>2</Comp.PaginationLink></Comp.PaginationItem>
+          <Comp.PaginationItem><Comp.PaginationLink href="#" onClick={noop}>3</Comp.PaginationLink></Comp.PaginationItem>
           <Comp.PaginationItem><Comp.PaginationEllipsis /></Comp.PaginationItem>
-          <Comp.PaginationItem><Comp.PaginationNext href="#" /></Comp.PaginationItem>
+          <Comp.PaginationItem><Comp.PaginationNext href="#" onClick={noop} /></Comp.PaginationItem>
         </Comp.PaginationContent>
       </Comp.Pagination>
     );

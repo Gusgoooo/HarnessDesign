@@ -8,6 +8,8 @@ const audit = autoClassControls(componentSrc);
 
 type Args = { [k: string]: string };
 
+const noop = (e: React.MouseEvent) => e.preventDefault();
+
 const meta = {
   title: "Breadcrumb",
   tags: ["autodocs"],
@@ -26,9 +28,9 @@ export const Default: Story = {
     return (
       <Comp.Breadcrumb>
         <Comp.BreadcrumbList className={audit.buildClassName(args)}>
-          <Comp.BreadcrumbItem><Comp.BreadcrumbLink href="#">首页</Comp.BreadcrumbLink></Comp.BreadcrumbItem>
+          <Comp.BreadcrumbItem><Comp.BreadcrumbLink href="#" onClick={noop}>首页</Comp.BreadcrumbLink></Comp.BreadcrumbItem>
           <Comp.BreadcrumbSeparator />
-          <Comp.BreadcrumbItem><Comp.BreadcrumbLink href="#">组件</Comp.BreadcrumbLink></Comp.BreadcrumbItem>
+          <Comp.BreadcrumbItem><Comp.BreadcrumbLink href="#" onClick={noop}>组件</Comp.BreadcrumbLink></Comp.BreadcrumbItem>
           <Comp.BreadcrumbSeparator />
           <Comp.BreadcrumbItem><Comp.BreadcrumbPage>面包屑</Comp.BreadcrumbPage></Comp.BreadcrumbItem>
         </Comp.BreadcrumbList>
