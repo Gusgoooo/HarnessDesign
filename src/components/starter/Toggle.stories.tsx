@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
-import { autoClassControls } from "@/design-tokens/tw-class-audit";
+import { autoClassControls, spreadAutoPreviewProps, type ClassOverrideArgs } from "@/design-tokens/tw-class-audit";
 import componentSrc from "./toggle.tsx?raw";
 import * as Comp from "./toggle";
 
@@ -10,7 +10,6 @@ type Args = { [k: string]: string };
 
 const meta = {
   title: "Toggle",
-  tags: ["autodocs"],
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({}),
   },
@@ -23,7 +22,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: (args) => {
-    return (<Comp.Toggle className={audit.buildClassName(args)} aria-label="切换"><span className="text-sm">B</span></Comp.Toggle>
+    return (<Comp.Toggle className={spreadAutoPreviewProps(audit, args as ClassOverrideArgs).className} aria-label="切换"><span className="text-sm">B</span></Comp.Toggle>
     );
   },
 };

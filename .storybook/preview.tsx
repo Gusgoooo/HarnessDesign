@@ -1,4 +1,4 @@
-import type { Preview } from "@storybook/react";
+import type { Decorator, Preview } from "@storybook/react";
 import { useEffect, useState, type ComponentProps } from "react";
 import { DocsContainer } from "@storybook/blocks";
 import { themes } from "@storybook/theming";
@@ -31,14 +31,22 @@ function useDarkSync() {
   return dark;
 }
 
-function DarkModeDecorator(Story: React.FC) {
+const DarkModeDecorator: Decorator = (Story, context) => {
   useDarkSync();
+  const fullscreen = context.parameters.layout === "fullscreen";
+  if (fullscreen) {
+    return (
+      <div className="fixed inset-0 box-border flex min-h-0 min-w-[320px] flex-col overflow-hidden">
+        <Story />
+      </div>
+    );
+  }
   return (
     <div style={{ minHeight: "100%", minWidth: 320 }}>
       <Story />
     </div>
   );
-}
+};
 
 type DocsContainerProps = ComponentProps<typeof DocsContainer>;
 
@@ -53,6 +61,7 @@ const preview: Preview = {
     options: {
       storySort: {
         order: [
+          "ALL",
           "DesignToken",
           "Patterns",
           "Badge",
@@ -72,6 +81,8 @@ const preview: Preview = {
     backgrounds: { disable: true },
     layout: "centered",
     docs: {
+      /** 隐藏所有 CSF 组件的 Docs 标签与文档页；仅 MDX 显式 `docs.disable: false` 的条目保留 */
+      disable: true,
       container: ThemedDocsContainer,
     },
   },

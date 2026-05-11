@@ -53,9 +53,9 @@ export const AlignWithButtons: Story = {
   render: () => (
     <div className="flex w-[min(100%,520px)] flex-col gap-6">
       {(["sm", "default", "lg"] as const).map((sz) => (
-        <div key={sz} className="flex flex-wrap items-center gap-2">
+        <div key={sz} className="flex flex-nowrap items-center gap-2">
           <span className="w-14 shrink-0 text-xs text-muted-foreground">{sz}</span>
-          <Button type="button" size={sz}>
+          <Button type="button" size={sz} className="shrink-0">
             按钮
           </Button>
           <div className="w-[220px]">

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
-import { autoClassControls } from "@/design-tokens/tw-class-audit";
+import { autoClassControls, spreadAutoPreviewProps, type ClassOverrideArgs } from "@/design-tokens/tw-class-audit";
 import componentSrc from "./separator.tsx?raw";
 import { Separator } from "./separator";
 
@@ -8,7 +8,6 @@ const audit = autoClassControls(componentSrc);
 
 const meta = {
   title: "Separator",
-  tags: ["autodocs"],
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["children"] }),
   },
@@ -27,7 +26,7 @@ export const Default: Story = {
   render: (args) => (
       <div className="w-[300px] space-y-4">
         <div className="text-sm font-medium">上方内容</div>
-        <Separator className={audit.buildClassName(args as unknown as Record<string, string>)} />
+        <Separator className={spreadAutoPreviewProps(audit, args as ClassOverrideArgs).className} />
         <div className="text-sm text-muted-foreground">下方内容</div>
       </div>
     ),

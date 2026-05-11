@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
-import { autoClassControls } from "@/design-tokens/tw-class-audit";
+import { autoClassControls, spreadAutoPreviewProps, type ClassOverrideArgs } from "@/design-tokens/tw-class-audit";
 import componentSrc from "./dropdown-menu.tsx?raw";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "./dropdown-menu";
 import { Button } from "./button";
@@ -9,7 +9,6 @@ const audit = autoClassControls(componentSrc);
 
 const meta = {
   title: "DropdownMenu",
-  tags: ["autodocs"],
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["children"] }),
   },
@@ -25,19 +24,27 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  render: (args) => (
+  args: {
+    bg_muted: "border"
+  },
+
+  render: (args) => {
+    const prev = spreadAutoPreviewProps(audit, args as ClassOverrideArgs);
+    const slot = prev.previewCnSlotOverrides ?? [];
+    return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline">打开菜单</Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className={audit.buildClassName(args as unknown as Record<string, string>)}>
-          <DropdownMenuLabel>我的账户</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>个人设置</DropdownMenuItem>
-          <DropdownMenuItem>账单管理</DropdownMenuItem>
-          <DropdownMenuItem>团队管理</DropdownMenuItem>
-          <DropdownMenuItem>退出登录</DropdownMenuItem>
+        <DropdownMenuContent className={slot[1]}>
+          <DropdownMenuLabel className={slot[5]}>我的账户</DropdownMenuLabel>
+          <DropdownMenuSeparator className={slot[6]} />
+          <DropdownMenuItem className={slot[2]}>个人设置</DropdownMenuItem>
+          <DropdownMenuItem className={slot[2]}>账单管理</DropdownMenuItem>
+          <DropdownMenuItem className={slot[2]}>团队管理</DropdownMenuItem>
+          <DropdownMenuItem className={slot[2]}>退出登录</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    ),
+    );
+  }
 };

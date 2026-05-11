@@ -6,7 +6,16 @@ const repoRoot = path.join(__dirname, "..");
 module.exports = {
   /** 仅收录业务/组件与文档 MDX，不包含 harness 目录 */
   stories: ["../src/**/*.mdx", "../src/components/**/*.stories.@(ts|tsx)"],
-  addons: ["@storybook/addon-essentials", "@storybook/addon-docs"],
+  addons: [
+    {
+      name: "@storybook/addon-essentials",
+      options: {
+        /** 关闭 Actions 面板标签（仍可用 controls 等；组件 Docs 在 preview 全局关闭） */
+        actions: false,
+      },
+    },
+    "@storybook/addon-docs",
+  ],
   framework: {
     name: "@storybook/react-vite",
     options: {},
@@ -22,8 +31,9 @@ module.exports = {
       propFilter: (prop) => (prop.parent ? !/node_modules/.test(prop.parent.fileName) : true),
     },
   },
+  /** 关闭 Autodocs；组件故事不再生成 / 展示 Docs（DesignToken、Patterns 的 MDX 在各自 Meta 里单独开启） */
   docs: {
-    autodocs: "tag",
+    autodocs: false,
   },
   core: {
     disableWhatsNewNotifications: true,

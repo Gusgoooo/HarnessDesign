@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
-import { autoClassControls } from "@/design-tokens/tw-class-audit";
+import { autoClassControls, spreadAutoPreviewProps, type ClassOverrideArgs } from "@/design-tokens/tw-class-audit";
 import dialogSrc from "./dialog.tsx?raw";
 import { Button } from "./button";
 import {
@@ -17,7 +17,6 @@ type DialogStoryArgs = {
 
 const meta = {
   title: "Dialog",
-  tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
     harnessTokenCompliance: storyHarnessCompliance({
@@ -40,6 +39,8 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   render: (_a) => {
     const args = _a as unknown as DialogStoryArgs & Record<string, string>;
+    const prev = spreadAutoPreviewProps(audit, args as ClassOverrideArgs);
+    const slot = prev.previewCnSlotOverrides ?? [];
     return (
       <Dialog defaultOpen={args.defaultOpen}>
         <div className="flex min-h-screen items-center justify-center">
@@ -47,13 +48,13 @@ export const Default: Story = {
             <Button variant="outline">打开对话框</Button>
           </DialogTrigger>
         </div>
-        <DialogContent className={audit.buildClassName(args)}>
-          <DialogHeader>
-            <DialogTitle>对话框标题</DialogTitle>
-            <DialogDescription>这是一段描述文本。点击遮罩或按 Esc 关闭。</DialogDescription>
+        <DialogContent className={prev.className}>
+          <DialogHeader className={slot[1]}>
+            <DialogTitle className={slot[3]}>对话框标题</DialogTitle>
+            <DialogDescription className={slot[4]}>这是一段描述文本。点击遮罩或按 Esc 关闭。</DialogDescription>
           </DialogHeader>
           <div className="py-4 text-sm">对话框内容区域</div>
-          <DialogFooter>
+          <DialogFooter className={slot[2]}>
             <DialogClose asChild>
               <Button variant="outline">取消</Button>
             </DialogClose>

@@ -529,7 +529,7 @@ export function auditClass(cls: string): AuditEntry | null {
   if (tcM && !TW_NUM_FONT_SIZE_PX[tcM[1]]) {
     const val = tcM[1];
     const isToken = SEMANTIC_COLORS.has(val) || SEMANTIC_COLORS.has(val.replace("-foreground", ""));
-    return { raw: cls, category: "textColor", prefix: "text", value: val, isToken, cssValue: val, equivalentToken: null, adjustable: false };
+    return { raw: cls, category: "textColor", prefix: "text", value: val, isToken, cssValue: val, equivalentToken: null, adjustable: true };
   }
 
   // --- Background Color ---
@@ -537,7 +537,7 @@ export function auditClass(cls: string): AuditEntry | null {
   if (bgM) {
     const val = bgM[1];
     const isToken = SEMANTIC_COLORS.has(val);
-    return { raw: cls, category: "bgColor", prefix: "bg", value: val, isToken, cssValue: val, equivalentToken: null, adjustable: false };
+    return { raw: cls, category: "bgColor", prefix: "bg", value: val, isToken, cssValue: val, equivalentToken: null, adjustable: true };
   }
 
   // --- Border Color ---
@@ -545,7 +545,7 @@ export function auditClass(cls: string): AuditEntry | null {
   if (bcM && !["solid", "dashed", "dotted", "0", "2", "4", "8"].includes(bcM[1])) {
     const val = bcM[1];
     const isToken = SEMANTIC_COLORS.has(val);
-    return { raw: cls, category: "borderColor", prefix: "border", value: val, isToken, cssValue: val, equivalentToken: null, adjustable: false };
+    return { raw: cls, category: "borderColor", prefix: "border", value: val, isToken, cssValue: val, equivalentToken: null, adjustable: true };
   }
 
   return null;
@@ -569,9 +569,8 @@ type CategoryMeta = {
 };
 
 const CATEGORY_BOUND = "Token 修改 · 已绑定";
-const CATEGORY_UNMAPPED = "Token 修改 · 未映射（可输入）";
-const CATEGORY_LAYOUT_NON_TOKEN = "Token 修改 · 未使用令牌（px 微调）";
-const TOKEN_SELECT_NONE = "";
+const CATEGORY_UNMAPPED = "Token 修改 · 未映射";
+const CATEGORY_LAYOUT_NON_TOKEN = "Token 修改 · px 微调";
 
 function readPxArg(raw: unknown): number | null {
   if (typeof raw === "number" && Number.isFinite(raw)) return raw;
@@ -591,6 +590,141 @@ function makeLayoutPxClass(prefix: string, px: number): string {
 function isSafeTailwindSuffix(s: string): boolean {
   return /^[\w.[\]\/-]+$/.test(s);
 }
+
+/**
+ * Tailwind 工具类前缀 → Controls「名称」列简短中文（与内部 args 键 `controlId` 无关）。
+ * 未列出的前缀在运行时按 category 回退。
+ */
+const SPACING_PREFIX_LABEL_ZH: Record<string, string> = {
+  p: "全向内边距",
+  px: "左右内边距",
+  py: "上下内边距",
+  pt: "上内边距",
+  pb: "下内边距",
+  pl: "左内边距",
+  pr: "右内边距",
+  m: "全向外边距",
+  mx: "左右外边距",
+  my: "上下外边距",
+  mt: "上外边距",
+  mb: "下外边距",
+  ml: "左外边距",
+  mr: "右外边距",
+  gap: "元素间距",
+  "gap-x": "横向元素间距",
+  "gap-y": "纵向元素间距",
+  "space-x": "子项横向间隔",
+  "space-y": "子项纵向间隔",
+  "inset-x": "左右内缩",
+  "inset-y": "上下内缩",
+  inset: "四向内缩",
+  top: "距顶偏移",
+  right: "距右偏移",
+  bottom: "距底偏移",
+  left: "距左偏移",
+  size: "宽高同值",
+  w: "宽度",
+  h: "高度",
+  "min-w": "最小宽度",
+  "max-w": "最大宽度",
+  "min-h": "最小高度",
+  "max-h": "最大高度",
+};
+
+const RADIUS_PREFIX_LABEL_ZH: Record<string, string> = {
+  rounded: "圆角",
+  "rounded-t": "顶边圆角",
+  "rounded-r": "右侧圆角",
+  "rounded-b": "底边圆角",
+  "rounded-l": "左侧圆角",
+  "rounded-tl": "左上角",
+  "rounded-tr": "右上角",
+  "rounded-bl": "左下角",
+  "rounded-br": "右下角",
+  "rounded-ss": "起角圆角",
+  "rounded-se": "止前圆角",
+  "rounded-es": "止后圆角",
+  "rounded-ee": "对角圆角",
+};
+
+const CATEGORY_FALLBACK_LABEL_ZH: Record<AuditCategory, string> = {
+  spacing: "间距",
+  layout: "间距",
+  radius: "圆角",
+  shadow: "阴影",
+  fontSize: "字号",
+  fontWeight: "字重",
+  textColor: "文字色",
+  bgColor: "背景色",
+  borderColor: "边框色",
+  opacity: "透明度",
+  duration: "动画时长",
+  other: "样式",
+};
+
+/** 与 autoClassControls 一致：Tailwind spacing/sizing 前缀 → Controls 名称列 */
+export function spacingUtilityPrefixLabelZh(prefix: string): string {
+  const neg = prefix.startsWith("-");
+  const p = neg ? prefix.slice(1) : prefix;
+  const base = SPACING_PREFIX_LABEL_ZH[p];
+  if (!base) return prefix;
+  return neg ? `${base}·负` : base;
+}
+
+function controlNameZh(entry: AuditEntry): string {
+  const p = entry.prefix.startsWith("-")
+    ? entry.prefix.slice(1)
+    : entry.prefix;
+  const neg = entry.prefix.startsWith("-");
+  let title: string | undefined;
+  if (entry.category === "spacing" || entry.category === "layout") {
+    title = SPACING_PREFIX_LABEL_ZH[p];
+  } else if (entry.category === "radius") {
+    title = RADIUS_PREFIX_LABEL_ZH[entry.prefix] ?? RADIUS_PREFIX_LABEL_ZH[p];
+  } else if (entry.category === "shadow") {
+    title = "阴影";
+  } else if (entry.category === "fontSize") {
+    title = "字号";
+  } else if (entry.category === "fontWeight") {
+    title = "字重";
+  } else if (entry.category === "opacity") {
+    title = "透明度";
+  } else if (entry.category === "duration") {
+    title = "动画时长";
+  } else if (entry.category === "textColor") {
+    title = `文字色·${entry.value}`;
+  } else if (entry.category === "bgColor") {
+    title = `背景色·${entry.value}`;
+  } else if (entry.category === "borderColor") {
+    title = `边框色·${entry.value}`;
+  }
+  if (!title) title = CATEGORY_FALLBACK_LABEL_ZH[entry.category] ?? p;
+  return neg ? `${title}·负` : title;
+}
+
+/** 语义色下拉选项（bg-/text-/border- 通用） */
+const TOKEN_SEMANTIC_COLOR: Record<string, string> = {
+  background: "页面背景",
+  foreground: "默认前景",
+  card: "卡片背景",
+  "card-foreground": "卡片前景",
+  popover: "弹出背景",
+  "popover-foreground": "弹出前景",
+  primary: "主色",
+  "primary-foreground": "主色前景",
+  secondary: "次级填充",
+  "secondary-foreground": "次级前景",
+  muted: "弱化背景",
+  "muted-foreground": "弱化前景",
+  accent: "强调填充",
+  "accent-foreground": "强调前景",
+  destructive: "危险色",
+  "destructive-foreground": "危险前景",
+  border: "边框",
+  input: "输入框边框",
+  ring: "焦点环",
+  transparent: "透明",
+};
 
 const CATEGORY_META: Record<string, CategoryMeta> = {
   spacing: {
@@ -629,6 +763,21 @@ const CATEGORY_META: Record<string, CategoryMeta> = {
     label: "动画时长",
     makeClass: (_p, k) => `duration-${k}`,
   },
+  textColor: {
+    tokens: TOKEN_SEMANTIC_COLOR,
+    label: "文字颜色",
+    makeClass: (_p, k) => `text-${k}`,
+  },
+  bgColor: {
+    tokens: TOKEN_SEMANTIC_COLOR,
+    label: "背景颜色",
+    makeClass: (_p, k) => `bg-${k}`,
+  },
+  borderColor: {
+    tokens: TOKEN_SEMANTIC_COLOR,
+    label: "边框颜色",
+    makeClass: (_p, k) => `border-${k}`,
+  },
 };
 
 function makeLabels(
@@ -647,35 +796,185 @@ function makeLabels(
 /** Storybook `args` 传入 `buildClassName` 时的形状（含 number 控件的运行时值） */
 export type ClassOverrideArgs = Record<string, string | number | undefined>;
 
+/** Story 侧把 token 覆盖路由到正确 DOM：根 `className` 与（若有）`classNames` 各槽 */
+export type AutoPreviewProps = {
+  className: string;
+  classNames?: Record<string, string>;
+  /**
+   * 源码中第 2 个及之后的 `className={cn(` 槽上的覆盖类（与 `extractClassNameCnBodiesWithStart` 顺序一致）；
+   * 第 1 个槽合并进 `className`。仅当文件中存在多个 `className={cn(` 时出现。
+   */
+  previewCnSlotOverrides?: string[];
+};
+
 export type AutoControlsResult = {
   entries: AuditEntry[];
   /** 与 Meta.args 兼容：全部为 string，避免与 `[k: string]: string` 冲突 */
   args: Record<string, string>;
   argTypes: Record<string, unknown>;
   buildClassName: (runtimeArgs: ClassOverrideArgs) => string;
+  /**
+   * 将 `buildClassName` 的片段按源码中 `classNames.xxx: cn(...)` / 根 `className={cn(...)}` 分流，
+   * 避免把 `gap-*` 等加在根节点而实际样式写在 `classNames.month` 上导致「改了控件没反应」。
+   */
+  buildPreview: (runtimeArgs: ClassOverrideArgs) => AutoPreviewProps;
   resolveArgTypes: (runtimeArgs: ClassOverrideArgs) => Record<string, unknown>;
   /** 非 token 条目总数 */
   nonTokenCount: number;
 };
 
+/** 供 Story 解构：`{...spreadAutoPreviewProps(audit, args)}` */
+export function spreadAutoPreviewProps(
+  audit: AutoControlsResult,
+  args: ClassOverrideArgs,
+): {
+  className?: string;
+  classNames?: Record<string, string>;
+  previewCnSlotOverrides?: string[];
+} {
+  const p = audit.buildPreview(args);
+  const out: {
+    className?: string;
+    classNames?: Record<string, string>;
+    previewCnSlotOverrides?: string[];
+  } = {};
+  if (p.className.trim()) out.className = p.className;
+  if (p.classNames && Object.keys(p.classNames).length > 0) out.classNames = p.classNames;
+  if (p.previewCnSlotOverrides?.some((s) => s.trim())) {
+    out.previewCnSlotOverrides = p.previewCnSlotOverrides;
+  }
+  return out;
+}
+
+const PREVIEW_ROOT = "__root__";
+
+type ClassNamesObjectSlice = { absInnerStart: number; inner: string };
+
+/** `classNames={{ ... }}` 内对象字面量正文（不含包裹它的 `{` `}`）及在源码中的起点 */
+function sliceClassNamesObjectInner(source: string): ClassNamesObjectSlice | null {
+  const o = source.indexOf("classNames={");
+  if (o < 0) return null;
+  let i = o + "classNames={".length;
+  while (i < source.length && /\s/.test(source[i]!)) i++;
+  if (source[i] !== "{") return null;
+  i++;
+  const absInnerStart = i;
+  let depth = 1;
+  while (i < source.length && depth > 0) {
+    const c = source[i]!;
+    if (c === "{") depth++;
+    else if (c === "}") depth--;
+    if (depth === 0) break;
+    i++;
+  }
+  return { absInnerStart, inner: source.slice(absInnerStart, i) };
+}
+
+/** `classNames` 里 `key: cn( ... )` 各槽在源码中的 cn 参数区间（绝对下标） */
+function extractClassNamesSlotRegions(
+  source: string,
+): { key: string; innerStart: number; innerEnd: number }[] {
+  const sl = sliceClassNamesObjectInner(source);
+  if (!sl) return [];
+  const { absInnerStart, inner } = sl;
+  const out: { key: string; innerStart: number; innerEnd: number }[] = [];
+  const re = /(\w+):\s*cn\(/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(inner)) !== null) {
+    const relStart = m.index + m[0].length;
+    let j = absInnerStart + relStart;
+    let depth = 1;
+    while (j < source.length && depth > 0) {
+      const c = source[j]!;
+      if (c === "(") depth++;
+      else if (c === ")") depth--;
+      j++;
+    }
+    out.push({
+      key: m[1],
+      innerStart: absInnerStart + relStart,
+      innerEnd: j - 1,
+    });
+  }
+  return out;
+}
+
+/** 源码中所有 `className={cn( ... )}` 的 cn 参数体及起始下标 */
+function extractClassNameCnBodiesWithStart(
+  source: string,
+): { start: number; body: string }[] {
+  const needle = "className={cn(";
+  const out: { start: number; body: string }[] = [];
+  let pos = 0;
+  while (pos < source.length) {
+    const idx = source.indexOf(needle, pos);
+    if (idx < 0) break;
+    const innerStart = idx + needle.length;
+    let j = innerStart;
+    let depth = 1;
+    while (j < source.length && depth > 0) {
+      const c = source[j];
+      if (c === "(") depth++;
+      else if (c === ")") depth--;
+      j++;
+    }
+    out.push({ start: innerStart, body: source.slice(innerStart, j - 1) });
+    pos = j;
+  }
+  return out;
+}
+
+/** 根据源码判断该 token 槽应对应 `classNames` 的哪个 key，否则走根 `className` / 第 N 个 `className={cn(` */
+function inferTokenPreviewSlot(source: string, entry: AuditEntry): string {
+  const raw = entry.raw;
+  const regions = extractClassNamesSlotRegions(source);
+  for (let i = regions.length - 1; i >= 0; i--) {
+    const r = regions[i];
+    if (source.slice(r.innerStart, r.innerEnd).includes(raw)) return r.key;
+  }
+  const bodies = extractClassNameCnBodiesWithStart(source);
+  for (let i = 0; i < bodies.length; i++) {
+    if (bodies[i].body.includes(raw)) {
+      return bodies.length === 1 || i === 0 ? PREVIEW_ROOT : `__cn_${i}`;
+    }
+  }
+  return PREVIEW_ROOT;
+}
+
+/** `autoClassControls` 可选配置 */
+export type AutoClassControlsOptions = {
+  /**
+   * 不在 Storybook Controls 中生成的 Tailwind **前缀**（如 `w`、`h`、`rounded`）。
+   * 用于轨道/拇指尺寸、药丸圆角等由实现锁定、不应交给设计师改 spacing / shadow token 映射的场景。
+   */
+  hidePrefixes?: string[];
+  /**
+   * 正则模式列表（对应 spec.json 的 styleLock.blacklist[].pattern）。
+   * 若 entry.raw 匹配任何模式则不生成控件。比 hidePrefixes 更精确。
+   */
+  hidePatterns?: RegExp[];
+};
+
 type SlotMeta =
-  | { mode: "mapped"; controlId: string; entry: AuditEntry; catMeta: CategoryMeta }
   | {
-      mode: "unmapped";
+      mode: "mapped";
       controlId: string;
-      rawControlId: string;
-      tokenControlId: string;
       entry: AuditEntry;
       catMeta: CategoryMeta;
+      previewSlot: string;
     }
   | {
       mode: "layoutPx";
       controlId: string;
       entry: AuditEntry;
       defaultPx: number;
+      previewSlot: string;
     };
 
-export function autoClassControls(source: string): AutoControlsResult {
+export function autoClassControls(
+  source: string,
+  options?: AutoClassControlsOptions,
+): AutoControlsResult {
   const rawClasses = extractClasses(source);
   const allEntries: AuditEntry[] = [];
   for (const cls of rawClasses) {
@@ -690,43 +989,64 @@ export function autoClassControls(source: string): AutoControlsResult {
     const slotKey =
       e.category === "layout"
         ? `layout::${e.prefix}::${e.value}`
-        : `${e.category}::${e.prefix}`;
+        : e.category === "fontSize" || e.category === "fontWeight"
+          ? `${e.category}::${e.prefix}::${e.value}`
+          : e.category === "textColor" || e.category === "bgColor" || e.category === "borderColor"
+            ? `${e.category}::${e.prefix}::${e.value}`
+            : `${e.category}::${e.prefix}`;
     if (seen.has(slotKey)) continue;
     seen.add(slotKey);
     adjustable.push(e);
   }
 
+  const hide = new Set(options?.hidePrefixes ?? []);
+  const hidePatterns = options?.hidePatterns ?? [];
+  const adjustableForControls = adjustable.filter((e) => {
+    if (hide.size && hide.has(e.prefix)) return false;
+    if (hidePatterns.length && hidePatterns.some((re) => re.test(e.raw))) return false;
+    return true;
+  });
+
   const args: Record<string, string> = {};
   const argTypes: Record<string, unknown> = {};
   const slotMeta: SlotMeta[] = [];
 
-  for (const entry of adjustable) {
+  for (const entry of adjustableForControls) {
     if (entry.category === "layout") {
       const px = parsePx(entry.cssValue);
       if (px == null) continue;
       const controlId = `layout_${entry.prefix.replace(/-/g, "_")}_${String(entry.value).replace(/\./g, "_")}`;
       const suggest =
         entry.equivalentToken != null
-          ? `\n设计 spacing 刻度中与当前最接近的后缀：${entry.equivalentToken}（${TW_NUM_SPACING_PX[entry.equivalentToken] ?? "?"}）`
+          ? `\n近似令牌：${entry.equivalentToken} = ${TW_NUM_SPACING_PX[entry.equivalentToken] ?? "?"}`
           : "";
       const desc =
-        `【未引用 spacing 设计令牌】源码类 ${entry.raw}（按 Tailwind 默认换算约 ${entry.cssValue}）。` +
-        `下方用像素数微调预览，会追加 arbitrary 类覆盖；与 tokens.json 无直接绑定。${suggest}`;
+        `源码类 ${entry.raw} ≈ ${entry.cssValue}，未绑定 spacing 令牌。${suggest}`;
       args[controlId] = String(px);
       argTypes[controlId] = {
-        name: controlId,
+        name: controlNameZh(entry),
         control: { type: "number" as const, min: 0, max: 512, step: 1 },
         description: desc,
         table: { category: CATEGORY_LAYOUT_NON_TOKEN },
       };
-      slotMeta.push({ mode: "layoutPx", controlId, entry, defaultPx: px });
+      slotMeta.push({
+        mode: "layoutPx",
+        controlId,
+        entry,
+        defaultPx: px,
+        previewSlot: inferTokenPreviewSlot(source, entry),
+      });
       continue;
     }
 
     const catMeta = CATEGORY_META[entry.category];
     if (!catMeta) continue;
 
-    const controlId = entry.prefix.replace(/-/g, "_");
+    const controlId =
+      entry.category === "fontSize" || entry.category === "fontWeight" ||
+      entry.category === "textColor" || entry.category === "bgColor" || entry.category === "borderColor"
+        ? `${entry.prefix.replace(/-/g, "_")}_${String(entry.value).replace(/[^a-zA-Z0-9]/g, "_")}`
+        : entry.prefix.replace(/-/g, "_");
     const defaultKey = entry.value;
     const tokenKeys = Object.keys(catMeta.tokens);
     const labels = makeLabels(catMeta.tokens, null);
@@ -735,86 +1055,104 @@ export function autoClassControls(source: string): AutoControlsResult {
       const desc = `${catMeta.label} · 已对齐设计刻度 · ${entry.raw}`;
       args[controlId] = defaultKey;
       argTypes[controlId] = {
+        name: controlNameZh(entry),
         control: { type: "select" as const, labels },
         options: [...tokenKeys],
         description: desc,
         table: { category: CATEGORY_BOUND },
       };
-      slotMeta.push({ mode: "mapped", controlId, entry, catMeta });
+      slotMeta.push({
+        mode: "mapped",
+        controlId,
+        entry,
+        catMeta,
+        previewSlot: inferTokenPreviewSlot(source, entry),
+      });
       continue;
     }
 
-    const rawControlId = `${controlId}_raw`;
-    const tokenControlId = `${controlId}_token`;
-    const equivLine = entry.equivalentToken
-      ? `\n建议近似 token：${entry.equivalentToken}`
-      : "";
-    const desc =
-      `${entry.raw}${entry.cssValue && entry.cssValue !== "?" ? ` · ${entry.cssValue}` : ""}${equivLine}\n` +
-      "可不绑定 token；文本框填写 Tailwind 刻度后缀或 arbitrary 片段；下拉可选令牌覆盖。";
+    const allLabels: Record<string, string> = { ...labels };
+    if (!tokenKeys.includes(defaultKey)) {
+      allLabels[defaultKey] = `${defaultKey} (源码值)`;
+    }
+    const options = tokenKeys.includes(defaultKey)
+      ? [...tokenKeys]
+      : [defaultKey, ...tokenKeys];
+    const desc = `${catMeta.label} · ${entry.raw}`;
 
-    args[rawControlId] = defaultKey;
-    args[tokenControlId] = TOKEN_SELECT_NONE;
-
-    const tokenOptions = [TOKEN_SELECT_NONE, ...tokenKeys];
-    const tokenLabels: Record<string, string> = {
-      [TOKEN_SELECT_NONE]: "（不绑定）",
-      ...labels,
-    };
-
-    argTypes[rawControlId] = {
-      control: "text",
+    args[controlId] = defaultKey;
+    argTypes[controlId] = {
+      name: controlNameZh(entry),
+      control: { type: "select" as const, labels: allLabels },
+      options,
       description: desc,
-      table: { category: CATEGORY_UNMAPPED },
-    };
-    argTypes[tokenControlId] = {
-      control: { type: "select" as const, labels: tokenLabels },
-      options: tokenOptions,
-      description: `${catMeta.label} · 令牌覆盖（可选）· ${entry.raw}`,
       table: { category: CATEGORY_UNMAPPED },
     };
 
     slotMeta.push({
-      mode: "unmapped",
+      mode: "mapped",
       controlId,
-      rawControlId,
-      tokenControlId,
       entry,
       catMeta,
+      previewSlot: inferTokenPreviewSlot(source, entry),
     });
+  }
+
+  function emitSlotOverride(
+    slot: SlotMeta,
+    runtimeArgs: ClassOverrideArgs,
+  ): string | null {
+    if (slot.mode === "layoutPx") {
+      const n = readPxArg(runtimeArgs[slot.controlId]);
+      if (n == null || n === slot.defaultPx) return null;
+      const cls = makeLayoutPxClass(slot.entry.prefix, n);
+      return cls || null;
+    }
+    const selected = runtimeArgs[slot.controlId];
+    if (selected == null || selected === "" || selected === slot.entry.value)
+      return null;
+    return slot.catMeta.makeClass(slot.entry.prefix, String(selected));
   }
 
   function buildClassName(runtimeArgs: ClassOverrideArgs): string {
     const parts: string[] = [];
-    for (const slot of slotMeta) {
-      if (slot.mode === "layoutPx") {
-        const n = readPxArg(runtimeArgs[slot.controlId]);
-        if (n == null || n === slot.defaultPx) continue;
-        const cls = makeLayoutPxClass(slot.entry.prefix, n);
-        if (cls) parts.push(cls);
-        continue;
-      }
-      if (slot.mode === "mapped") {
-        const selected = runtimeArgs[slot.controlId];
-        if (selected == null || selected === "" || selected === slot.entry.value) continue;
-        parts.push(slot.catMeta.makeClass(slot.entry.prefix, String(selected)));
-        continue;
-      }
-      const tokenPick = runtimeArgs[slot.tokenControlId];
-      if (tokenPick && String(tokenPick) !== TOKEN_SELECT_NONE) {
-        parts.push(slot.catMeta.makeClass(slot.entry.prefix, String(tokenPick)));
-        continue;
-      }
-      const raw = runtimeArgs[slot.rawControlId];
-      if (
-        raw != null &&
-        String(raw) !== slot.entry.value &&
-        isSafeTailwindSuffix(String(raw))
-      ) {
-        parts.push(slot.catMeta.makeClass(slot.entry.prefix, String(raw)));
-      }
+    for (const sm of slotMeta) {
+      const cls = emitSlotOverride(sm, runtimeArgs);
+      if (cls) parts.push(cls);
     }
     return parts.join(" ");
+  }
+
+  function buildPreview(runtimeArgs: ClassOverrideArgs): AutoPreviewProps {
+    const buckets: Record<string, string[]> = {};
+    for (const sm of slotMeta) {
+      const cls = emitSlotOverride(sm, runtimeArgs);
+      if (!cls) continue;
+      const key = sm.previewSlot;
+      (buckets[key] ??= []).push(cls);
+    }
+    const className = (buckets[PREVIEW_ROOT] ?? []).join(" ");
+    const classNames: Record<string, string> = {};
+    for (const [k, arr] of Object.entries(buckets)) {
+      if (k === PREVIEW_ROOT || k.startsWith("__cn_")) continue;
+      const s = arr.join(" ");
+      if (s.trim()) classNames[k] = s;
+    }
+    const bodies = extractClassNameCnBodiesWithStart(source);
+    let previewCnSlotOverrides: string[] | undefined;
+    if (bodies.length > 1) {
+      previewCnSlotOverrides = [];
+      for (let i = 1; i < bodies.length; i++) {
+        const slotKey = `__cn_${i}`;
+        const s = (buckets[slotKey] ?? []).join(" ").trim();
+        previewCnSlotOverrides.push(s);
+      }
+    }
+    return {
+      className,
+      ...(Object.keys(classNames).length > 0 ? { classNames } : {}),
+      ...(previewCnSlotOverrides?.length ? { previewCnSlotOverrides } : {}),
+    };
   }
 
   function resolveArgTypes(_runtimeArgs: ClassOverrideArgs): Record<string, unknown> {
@@ -823,5 +1161,13 @@ export function autoClassControls(source: string): AutoControlsResult {
 
   const nonTokenCount = allEntries.filter((e) => !e.isToken).length;
 
-  return { entries: allEntries, args, argTypes, buildClassName, resolveArgTypes, nonTokenCount };
+  return {
+    entries: allEntries,
+    args,
+    argTypes,
+    buildClassName,
+    buildPreview,
+    resolveArgTypes,
+    nonTokenCount,
+  };
 }

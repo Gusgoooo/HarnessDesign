@@ -65,6 +65,63 @@ function categorize(id: string): DesignTokenCategory {
   return "other";
 }
 
+function inferTailwindClass(id: string): string {
+  if (id === "primary" || id === "secondary" || id === "muted" || id === "accent" ||
+      id === "destructive" || id === "background" || id === "foreground" ||
+      id === "card" || id === "popover" || id === "border" || id === "input" || id === "ring") {
+    return `bg-${id} / text-${id}`;
+  }
+  if (id.endsWith("-foreground")) {
+    return `text-${id}`;
+  }
+  if (id.startsWith("sidebar")) {
+    return `bg-${id} / text-${id}`;
+  }
+  if (id.startsWith("chart-")) {
+    return `fill-${id} / stroke-${id}`;
+  }
+  if (id.startsWith("color-primary") || id.startsWith("color-success") ||
+      id.startsWith("color-warning") || id.startsWith("color-error") ||
+      id.startsWith("color-info") || id.startsWith("color-link")) {
+    return `text-[var(--${id})] / bg-[var(--${id})]`;
+  }
+  if (id.startsWith("color-text") || id.startsWith("color-fill") || id.startsWith("color-bg") ||
+      id.startsWith("color-border")) {
+    return `[var(--${id})]`;
+  }
+  if (id.startsWith("border-radius")) {
+    const suffix = id.replace("border-radius-", "").replace("border-radius", "md");
+    return `rounded-${suffix}`;
+  }
+  if (id.startsWith("spacing-")) {
+    const suffix = id.replace("spacing-", "");
+    return `p-${suffix} / m-${suffix} / gap-${suffix}`;
+  }
+  if (id.startsWith("elevation-")) {
+    const suffix = id.replace("elevation-", "");
+    return suffix === "none" ? "shadow-none" : `shadow-${suffix}`;
+  }
+  if (id === "elevation") return "shadow";
+  if (id.startsWith("motion-duration-")) {
+    const suffix = id.replace("motion-duration-", "");
+    return `duration-${suffix}`;
+  }
+  if (id.startsWith("font-size")) {
+    const suffix = id.replace("font-size-", "").replace("font-size", "base");
+    return `text-${suffix}`;
+  }
+  if (id.startsWith("font-weight-")) {
+    const suffix = id.replace("font-weight-", "");
+    return `font-${suffix}`;
+  }
+  if (id.startsWith("opacity-")) {
+    const suffix = id.replace("opacity-", "");
+    return `opacity-${suffix}`;
+  }
+  if (id.startsWith("z-")) return id;
+  return "";
+}
+
 function buildFromV2(v2: TokensV2): DesignTokenEntry[] {
   const entries: DesignTokenEntry[] = [];
   const { seed, seedDark = {}, mapOverrides = {}, customSeeds = {}, fixedAliases = {} } = v2;
@@ -72,7 +129,7 @@ function buildFromV2(v2: TokensV2): DesignTokenEntry[] {
   const moD = mapOverrides.dark ?? {};
 
   const add = (id: string, light: string, dark: string) => {
-    entries.push({ id, category: categorize(id), light, dark, tailwindClass: "", usedBy: [] });
+    entries.push({ id, category: categorize(id), light, dark, tailwindClass: inferTailwindClass(id), usedBy: [] });
   };
 
   try {

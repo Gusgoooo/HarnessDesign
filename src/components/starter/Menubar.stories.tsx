@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
-import { autoClassControls } from "@/design-tokens/tw-class-audit";
+import { autoClassControls, spreadAutoPreviewProps, type ClassOverrideArgs } from "@/design-tokens/tw-class-audit";
 import componentSrc from "./menubar.tsx?raw";
 import * as Comp from "./menubar";
 
@@ -10,7 +10,6 @@ type Args = { [k: string]: string };
 
 const meta = {
   title: "Menubar",
-  tags: ["autodocs"],
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({}),
   },
@@ -23,22 +22,24 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: (args) => {
+    const prev = spreadAutoPreviewProps(audit, args as ClassOverrideArgs);
+    const slot = prev.previewCnSlotOverrides ?? [];
     return (
-      <Comp.Menubar className={audit.buildClassName(args)}>
+      <Comp.Menubar className={prev.className}>
         <Comp.MenubarMenu>
-          <Comp.MenubarTrigger>文件</Comp.MenubarTrigger>
-          <Comp.MenubarContent>
-            <Comp.MenubarItem>新建</Comp.MenubarItem>
-            <Comp.MenubarItem>打开</Comp.MenubarItem>
-            <Comp.MenubarSeparator />
-            <Comp.MenubarItem>退出</Comp.MenubarItem>
+          <Comp.MenubarTrigger className={slot[0]}>文件</Comp.MenubarTrigger>
+          <Comp.MenubarContent className={slot[3]}>
+            <Comp.MenubarItem className={slot[4]}>新建</Comp.MenubarItem>
+            <Comp.MenubarItem className={slot[4]}>打开</Comp.MenubarItem>
+            <Comp.MenubarSeparator className={slot[8]} />
+            <Comp.MenubarItem className={slot[4]}>退出</Comp.MenubarItem>
           </Comp.MenubarContent>
         </Comp.MenubarMenu>
         <Comp.MenubarMenu>
-          <Comp.MenubarTrigger>编辑</Comp.MenubarTrigger>
-          <Comp.MenubarContent>
-            <Comp.MenubarItem>撤销</Comp.MenubarItem>
-            <Comp.MenubarItem>重做</Comp.MenubarItem>
+          <Comp.MenubarTrigger className={slot[0]}>编辑</Comp.MenubarTrigger>
+          <Comp.MenubarContent className={slot[3]}>
+            <Comp.MenubarItem className={slot[4]}>撤销</Comp.MenubarItem>
+            <Comp.MenubarItem className={slot[4]}>重做</Comp.MenubarItem>
           </Comp.MenubarContent>
         </Comp.MenubarMenu>
       </Comp.Menubar>

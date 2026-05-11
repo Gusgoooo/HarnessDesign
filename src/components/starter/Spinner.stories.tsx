@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
-import { autoClassControls } from "@/design-tokens/tw-class-audit";
+import { autoClassControls, spreadAutoPreviewProps, type ClassOverrideArgs } from "@/design-tokens/tw-class-audit";
 import componentSrc from "./spinner.tsx?raw";
 import * as Comp from "./spinner";
 
@@ -10,7 +10,6 @@ type Args = { [k: string]: string };
 
 const meta = {
   title: "Spinner",
-  tags: ["autodocs"],
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({}),
   },
@@ -23,7 +22,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: (args) => {
-    return (<Comp.Spinner className={audit.buildClassName(args)} />
+    return (<Comp.Spinner className={spreadAutoPreviewProps(audit, args as ClassOverrideArgs).className} />
     );
   },
 };

@@ -375,7 +375,6 @@ export function schemaApiPlugin(repoRoot) {
                   `const meta = {`,
                   `  title: "${pascal}",`,
                   `  component: ${pascal},`,
-                  `  tags: ["autodocs"],`,
                   `  parameters: { harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["children"] }) },`,
                   `  args: { ...audit.args },`,
                   `  argTypes: { ...audit.argTypes },`,

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
-import { autoClassControls } from "@/design-tokens/tw-class-audit";
+import { autoClassControls, spreadAutoPreviewProps, type ClassOverrideArgs } from "@/design-tokens/tw-class-audit";
 import componentSrc from "./field.tsx?raw";
 import * as Comp from "./field";
 
@@ -10,7 +10,6 @@ type Args = { [k: string]: string };
 
 const meta = {
   title: "Field",
-  tags: ["autodocs"],
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({}),
   },
@@ -23,11 +22,13 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: (args) => {
+    const prev = spreadAutoPreviewProps(audit, args as ClassOverrideArgs);
+    const slot = prev.previewCnSlotOverrides ?? [];
     return (
-      <Comp.Field className={audit.buildClassName(args)}>
-        <Comp.FieldLabel>邮箱</Comp.FieldLabel>
+      <Comp.Field className={slot[2]}>
+        <Comp.FieldLabel className={slot[4]}>邮箱</Comp.FieldLabel>
         <input className="flex h-8 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" placeholder="your@email.com" />
-        <Comp.FieldDescription>请输入有效的邮箱地址。</Comp.FieldDescription>
+        <Comp.FieldDescription className={slot[6]}>请输入有效的邮箱地址。</Comp.FieldDescription>
       </Comp.Field>
     );
   },

@@ -2,7 +2,7 @@
 
 与根目录 `.cursorrules` 内容一致（由 `npm run sync:harness` 生成）；请勿手改。
 
-# AI Component Harness — 自动生成，请勿手改（修改请编辑 schema 后运行 npm run sync:harness 或 npm run generate:rules）
+# Harness AI schema — 自动生成，请勿手改（修改 `*.spec.json` 后运行 npm run sync:harness 或 npm run generate:rules）
 
 ## 核心契约（AI 必须遵守）
 
@@ -113,76 +113,122 @@
 - 禁止覆盖背景与文字色 — pattern: `^(bg|text)-(popover|foreground)`
 - 禁止覆盖字体大小 — pattern: `^text-(xs|sm|base|lg)`
 
-## 组件意图与 AI 指令
+## 组件意图与 AI schema
 ### Alert
-- **Intent**: 用于向用户展示重要提示信息，如成功、警告、错误等状态反馈；支持标题与描述组合。
-- **AI**: 需要提示信息时使用 Alert 组件；通过 variant 控制类型（默认/错误）；内部使用 AlertTitle 和 AlertDescription 组合内容结构。
+- **上游模块**: `@/components/starter/alert`
+- **子组件（AI schema）**: `Alert`、`AlertTitle`、`AlertDescription`
+- **Intent（业务意图）**: 用于向用户展示重要提示信息，如成功、警告、错误等状态反馈；支持标题与描述组合。
+- **AI schema 指令**: 需要提示信息时使用 Alert 组件；通过 variant 控制类型（默认/错误）；内部使用 AlertTitle 和 AlertDescription 组合内容结构。
 ### Avatar
-- **Intent**: 展示用户头像，支持图片加载与文字回退；用于用户列表、评论、导航栏等场景。
-- **AI**: 展示用户头像时使用 Avatar + AvatarImage + AvatarFallback 组合；AvatarFallback 在图片加载失败时显示替代文字或图标。
+- **上游模块**: `@/components/starter/avatar`
+- **子组件（AI schema）**: `Avatar`、`AvatarImage`、`AvatarFallback`
+- **Intent（业务意图）**: 展示用户头像，支持图片加载与文字回退；用于用户列表、评论、导航栏等场景。
+- **AI schema 指令**: 展示用户头像时使用 Avatar + AvatarImage + AvatarFallback 组合；AvatarFallback 在图片加载失败时显示替代文字或图标。
 ### BusinessBadge
-- **Intent**: 状态标记、标签与计数气泡的统一入口；禁止在业务页手写 span+bg 实现类似效果。
-- **AI**: 需要标签/徽章时必须使用 @/components/business/BusinessBadge；通过 variant 控制风格，禁止手写背景色和间距。
+- **上游模块**: `@/components/starter/badge`
+- **子组件（AI schema）**: `Badge`
+- **Intent（业务意图）**: 状态标记、标签与计数气泡的统一入口；禁止在业务页手写 span+bg 实现类似效果。
+- **AI schema 指令**: 需要标签/徽章时必须使用 @/components/business/BusinessBadge；通过 variant 控制风格，禁止手写背景色和间距。
 ### BusinessButton
-- **Intent**: 所有可点击行为的统一入口：主操作、次要操作、链接导航等；禁止在业务页散落原生 <button> 并手写间距与品牌色。
-- **AI**: 需要按钮时必须使用 @/components/business/BusinessButton；通过 variant 控制视觉风格，通过 size 控制尺寸；禁止在 JSX 上堆叠 h-/px-/bg-primary 等 Tailwind 覆盖。颜色仅允许 design token 语义类。
+- **上游模块**: `@/components/starter/button`
+- **子组件（AI schema）**: `Button`
+- **Intent（业务意图）**: 所有可点击行为的统一入口：主操作、次要操作、链接导航等；禁止在业务页散落原生 <button> 并手写间距与品牌色。
+- **AI schema 指令**: 需要按钮时必须使用 @/components/business/BusinessButton；通过 variant 控制视觉风格，通过 size 控制尺寸；禁止在 JSX 上堆叠 h-/px-/bg-primary 等 Tailwind 覆盖。颜色仅允许 design token 语义类。
 ### Card
-- **Intent**: 通用内容容器，用于分组展示相关信息；支持标题、描述、正文、底部操作等结构化布局。
-- **AI**: 展示分组内容时使用 Card 组件；内部按 CardHeader > CardTitle/CardDescription > CardContent > CardFooter 的层次结构组织；禁止直接在 Card 上添加 padding 类。
+- **上游模块**: `@/components/starter/card`
+- **子组件（AI schema）**: `Card`、`CardHeader`、`CardTitle`、`CardDescription`、`CardContent`、`CardFooter`
+- **Intent（业务意图）**: 通用内容容器，用于分组展示相关信息；支持标题、描述、正文、底部操作等结构化布局。
+- **AI schema 指令**: 展示分组内容时使用 Card 组件；内部按 CardHeader > CardTitle/CardDescription > CardContent > CardFooter 的层次结构组织；禁止直接在 Card 上添加 padding 类。
 ### BusinessCheckbox
-- **Intent**: 勾选/取消勾选的统一入口：表单同意项、多选过滤器、批量选择等；禁止在业务页裸用 <input type=checkbox>。
-- **AI**: 需要勾选框时必须使用 @/components/business/BusinessCheckbox；禁止手写尺寸与品牌色。
+- **上游模块**: `@/components/starter/checkbox`
+- **子组件（AI schema）**: `Checkbox`
+- **Intent（业务意图）**: 勾选/取消勾选的统一入口：表单同意项、多选过滤器、批量选择等；禁止在业务页裸用 <input type=checkbox>。
+- **AI schema 指令**: 需要勾选框时必须使用 @/components/business/BusinessCheckbox；禁止手写尺寸与品牌色。
 ### DataTable
-- **Intent**: 展示业务列表数据的主表格：分页、排序、批量操作在此收敛；禁止在业务页散落原生 <table> 与任意间距类。
-- **AI**: 展示表格数据时必须使用 @/components/business/DataTable；通过 density/variant 表达密度与斑马纹，禁止在 JSX 上堆叠 p-/m-/border-/bg-primary 等 Tailwind；列宽用 columns 元数据或模板列，不要手写 w-[13px]。颜色与边框仅允许来自全局令牌 src/design-tokens/tokens.json 所映射的语义类（如 border-border、bg-muted），禁止手写 oklch/hex 离散值。
+- **上游模块**: `@/components/ui/table`
+- **子组件（AI schema）**: `Table`、`TableHeader`、`TableBody`、`TableRow`、`TableHead`、`TableCell`（展示名：数据单元格（TableCell））
+- **Intent（业务意图）**: 展示业务列表数据的主表格：分页、排序、批量操作在此收敛；禁止在业务页散落原生 <table> 与任意间距类。
+- **AI schema 指令**: 展示表格数据时必须使用 @/components/business/DataTable；通过 density/variant 表达密度与斑马纹，禁止在 JSX 上堆叠 p-/m-/border-/bg-primary 等 Tailwind；列宽用 columns 元数据或模板列，不要手写 w-[13px]。颜色与边框仅允许来自全局令牌 src/design-tokens/tokens.json 所映射的语义类（如 border-border、bg-muted），禁止手写 oklch/hex 离散值。
 ### Dialog
-- **Intent**: 模态对话框，用于需要用户确认或输入信息的场景；阻断背景交互，支持受控与非受控模式。
-- **AI**: 需要模态交互时使用 Dialog 组件；结构为 Dialog > DialogTrigger + DialogContent > DialogHeader/DialogFooter；通过 open/onOpenChange 实现受控，或使用 DialogTrigger/DialogClose 实现非受控。
+- **上游模块**: `@/components/starter/dialog`
+- **子组件（AI schema）**: `Dialog`、`DialogTrigger`、`DialogContent`、`DialogHeader`、`DialogFooter`、`DialogTitle`、`DialogDescription`、`DialogClose`
+- **Intent（业务意图）**: 模态对话框，用于需要用户确认或输入信息的场景；阻断背景交互，支持受控与非受控模式。
+- **AI schema 指令**: 需要模态交互时使用 Dialog 组件；结构为 Dialog > DialogTrigger + DialogContent > DialogHeader/DialogFooter；通过 open/onOpenChange 实现受控，或使用 DialogTrigger/DialogClose 实现非受控。
 ### DropdownMenu
-- **Intent**: 下拉菜单，用于在触发按钮下方展示操作列表；适用于更多操作、批量操作等场景。
-- **AI**: 需要下拉操作列表时使用 DropdownMenu；结构为 DropdownMenu > DropdownMenuTrigger + DropdownMenuContent > DropdownMenuItem；使用 DropdownMenuSeparator 分隔逻辑组。
+- **上游模块**: `@/components/starter/dropdown-menu`
+- **子组件（AI schema）**: `DropdownMenu`、`DropdownMenuTrigger`、`DropdownMenuContent`、`DropdownMenuItem`、`DropdownMenuSeparator`
+- **Intent（业务意图）**: 下拉菜单，用于在触发按钮下方展示操作列表；适用于更多操作、批量操作等场景。
+- **AI schema 指令**: 需要下拉操作列表时使用 DropdownMenu；结构为 DropdownMenu > DropdownMenuTrigger + DropdownMenuContent > DropdownMenuItem；使用 DropdownMenuSeparator 分隔逻辑组。
 ### BusinessInput
-- **Intent**: 所有文本输入场景的统一入口：搜索、表单字段、密码等；禁止在业务页散落原生 <input> 并手写间距与边框。
-- **AI**: 需要文本输入时必须使用 @/components/business/BusinessInput；禁止在 JSX 上堆叠 h-/px-/border- 等 Tailwind 覆盖。
+- **上游模块**: `@/components/starter/input`
+- **子组件（AI schema）**: `Input`
+- **Intent（业务意图）**: 所有文本输入场景的统一入口：搜索、表单字段、密码等；禁止在业务页散落原生 <input> 并手写间距与边框。
+- **AI schema 指令**: 需要文本输入时必须使用 @/components/business/BusinessInput；禁止在 JSX 上堆叠 h-/px-/border- 等 Tailwind 覆盖。
 ### Label
-- **Intent**: 表单标签，与 Input/Select 等表单控件配合使用；提供一致的字体样式与禁用态关联。
-- **AI**: 表单控件前必须使用 Label 组件提供标签；通过 htmlFor 关联对应控件 id；禁止用 <span> 或 <p> 代替 Label。
+- **上游模块**: `@/components/starter/label`
+- **子组件（AI schema）**: `Label`
+- **Intent（业务意图）**: 表单标签，与 Input/Select 等表单控件配合使用；提供一致的字体样式与禁用态关联。
+- **AI schema 指令**: 表单控件前必须使用 Label 组件提供标签；通过 htmlFor 关联对应控件 id；禁止用 <span> 或 <p> 代替 Label。
 ### Popover
-- **Intent**: 弹出气泡框，用于在触发元素附近展示额外内容或轻量交互；点击外部自动关闭。
-- **AI**: 需要轻量弹出内容时使用 Popover；结构为 Popover > PopoverTrigger + PopoverContent；通过 align 属性控制对齐方式（start/center/end）。
+- **上游模块**: `@/components/starter/popover`
+- **子组件（AI schema）**: `Popover`、`PopoverTrigger`、`PopoverContent`
+- **Intent（业务意图）**: 弹出气泡框，用于在触发元素附近展示额外内容或轻量交互；点击外部自动关闭。
+- **AI schema 指令**: 需要轻量弹出内容时使用 Popover；结构为 Popover > PopoverTrigger + PopoverContent；通过 align 属性控制对齐方式（start/center/end）。
 ### Progress
-- **Intent**: 进度条，用于展示任务完成百分比；支持自定义最大值与无障碍属性。
-- **AI**: 展示进度时使用 Progress 组件；通过 value 和 max 控制进度；禁止手动设置 h-/bg- 覆盖样式。
+- **上游模块**: `@/components/starter/progress`
+- **子组件（AI schema）**: `Progress`
+- **Intent（业务意图）**: 进度条，用于展示任务完成百分比；支持自定义最大值与无障碍属性。
+- **AI schema 指令**: 展示进度时使用 Progress 组件；通过 value 和 max 控制进度；禁止手动设置 h-/bg- 覆盖样式。
 ### RadioGroup
-- **Intent**: 单选按钮组，用于在多个互斥选项中选择一个；支持受控与非受控模式。
-- **AI**: 互斥选项选择使用 RadioGroup + RadioGroupItem；通过 value/onValueChange 实现受控；每个 RadioGroupItem 需搭配 Label 使用以保证无障碍。
+- **上游模块**: `@/components/starter/radio-group`
+- **子组件（AI schema）**: `RadioGroup`、`RadioGroupItem`
+- **Intent（业务意图）**: 单选按钮组，用于在多个互斥选项中选择一个；支持受控与非受控模式。
+- **AI schema 指令**: 互斥选项选择使用 RadioGroup + RadioGroupItem；通过 value/onValueChange 实现受控；每个 RadioGroupItem 需搭配 Label 使用以保证无障碍。
 ### ScrollArea
-- **Intent**: 自定义滚动区域容器，用于限制内容高度并提供滚动能力；保持滚动行为一致性。
-- **AI**: 需要滚动容器时使用 ScrollArea；通过 className 设置 max-h 控制可视高度；禁止直接在容器上覆盖 overflow 类。
+- **上游模块**: `@/components/starter/scroll-area`
+- **子组件（AI schema）**: `ScrollArea`
+- **Intent（业务意图）**: 自定义滚动区域容器，用于限制内容高度并提供滚动能力；保持滚动行为一致性。
+- **AI schema 指令**: 需要滚动容器时使用 ScrollArea；通过 className 设置 max-h 控制可视高度；禁止直接在容器上覆盖 overflow 类。
 ### Select
-- **Intent**: 原生下拉选择器，统一边框与交互样式；用于简单选项场景，复杂异步选项请外层封装。
-- **AI**: 简单选择场景使用 Select 组件包裹 <option>；禁止在业务页使用裸 <select> 标签；复杂选择器（搜索、多选）需在此基础上封装。
+- **上游模块**: `@/components/starter/select`
+- **子组件（AI schema）**: `Select`
+- **Intent（业务意图）**: 原生下拉选择器，统一边框与交互样式；用于简单选项场景，复杂异步选项请外层封装。
+- **AI schema 指令**: 简单选择场景使用 Select 组件包裹 <option>；禁止在业务页使用裸 <select> 标签；复杂选择器（搜索、多选）需在此基础上封装。
 ### Separator
-- **Intent**: 分隔线，用于视觉分隔内容区域；支持水平和垂直方向。
-- **AI**: 内容区域之间需要视觉分隔时使用 Separator；通过 orientation 控制方向；禁止用 <hr> 或手写 border 代替。
+- **上游模块**: `@/components/starter/separator`
+- **子组件（AI schema）**: `Separator`
+- **Intent（业务意图）**: 分隔线，用于视觉分隔内容区域；支持水平和垂直方向。
+- **AI schema 指令**: 内容区域之间需要视觉分隔时使用 Separator；通过 orientation 控制方向；禁止用 <hr> 或手写 border 代替。
 ### Skeleton
-- **Intent**: 骨架屏占位符，用于内容加载时展示预期布局形态；减少页面跳动感。
-- **AI**: 加载态使用 Skeleton 占位；通过 className 设置宽高模拟真实内容形状（如 h-4 w-[200px]）；禁止修改 animate-pulse 和 bg-muted。
+- **上游模块**: `@/components/starter/skeleton`
+- **子组件（AI schema）**: `Skeleton`
+- **Intent（业务意图）**: 骨架屏占位符，用于内容加载时展示预期布局形态；减少页面跳动感。
+- **AI schema 指令**: 加载态使用 Skeleton 占位；通过 className 设置宽高模拟真实内容形状（如 h-4 w-[200px]）；禁止修改 animate-pulse 和 bg-muted。
 ### Slider
-- **Intent**: 滑块控件，用于在一个范围内选取数值；基于原生 range input 实现。
-- **AI**: 范围选值使用 Slider 组件；通过 min/max/step 控制范围；禁止覆盖轨道样式，颜色由 design token 驱动。
+- **上游模块**: `@/components/starter/slider`
+- **子组件（AI schema）**: `Slider`
+- **Intent（业务意图）**: 滑块控件，用于在一个范围内选取数值；基于原生 range input 实现。
+- **AI schema 指令**: 范围选值使用 Slider 组件；通过 min/max/step 控制范围；禁止覆盖轨道样式，颜色由 design token 驱动。
 ### Switch
-- **Intent**: 开关组件，用于布尔值切换场景（如启用/禁用功能）；基于无障碍 checkbox + 视觉化轨道实现。
-- **AI**: 布尔切换场景使用 Switch 组件；搭配 Label 使用提供文字说明；禁止用 checkbox 或自定义 div 实现开关效果。
+- **上游模块**: `@/components/starter/switch`
+- **子组件（AI schema）**: `Switch`
+- **Intent（业务意图）**: 开关组件，用于布尔值切换场景（如启用/禁用功能）；基于无障碍 checkbox + 视觉化轨道实现。
+- **AI schema 指令**: 布尔切换场景使用 Switch 组件；搭配 Label 使用提供文字说明；禁止用 checkbox 或自定义 div 实现开关效果。
 ### Tabs
-- **Intent**: 选项卡组件，用于在同一区域内切换不同视图/面板；支持受控与非受控模式。
-- **AI**: 内容面板切换使用 Tabs 组件；结构为 Tabs > TabsList > TabsTrigger + TabsContent；每个 TabsTrigger 和 TabsContent 的 value 必须对应。
+- **上游模块**: `@/components/starter/tabs`
+- **子组件（AI schema）**: `Tabs`、`TabsList`、`TabsTrigger`、`TabsContent`
+- **Intent（业务意图）**: 选项卡组件，用于在同一区域内切换不同视图/面板；支持受控与非受控模式。
+- **AI schema 指令**: 内容面板切换使用 Tabs 组件；结构为 Tabs > TabsList > TabsTrigger + TabsContent；每个 TabsTrigger 和 TabsContent 的 value 必须对应。
 ### Textarea
-- **Intent**: 多行文本输入框，用于需要较长文本输入的场景；统一边框、圆角与聚焦样式。
-- **AI**: 多行输入场景使用 Textarea 组件；禁止在业务页使用裸 <textarea>；搭配 Label 使用；通过 className 仅允许添加布局类（如 w-full）。
+- **上游模块**: `@/components/starter/textarea`
+- **子组件（AI schema）**: `Textarea`
+- **Intent（业务意图）**: 多行文本输入框，用于需要较长文本输入的场景；统一边框、圆角与聚焦样式。
+- **AI schema 指令**: 多行输入场景使用 Textarea 组件；禁止在业务页使用裸 <textarea>；搭配 Label 使用；通过 className 仅允许添加布局类（如 w-full）。
 ### Tooltip
-- **Intent**: 文字提示气泡，用于鼠标悬停时展示辅助说明文字；不承载交互内容。
-- **AI**: 需要悬停提示时使用 Tooltip 组件；结构为 TooltipProvider > Tooltip > TooltipTrigger + TooltipContent；内容仅限纯文字说明，交互内容请用 Popover。
+- **上游模块**: `@/components/starter/tooltip`
+- **子组件（AI schema）**: `TooltipProvider`、`Tooltip`、`TooltipTrigger`、`TooltipContent`
+- **Intent（业务意图）**: 文字提示气泡，用于鼠标悬停时展示辅助说明文字；不承载交互内容。
+- **AI schema 指令**: 需要悬停提示时使用 Tooltip 组件；结构为 TooltipProvider > Tooltip > TooltipTrigger + TooltipContent；内容仅限纯文字说明，交互内容请用 Popover。
 
 ## 纠错指令
 - **no-raw-button**: 若 在 features/** 或 pages/** 使用原生 <button> → 替换为 import { BusinessButton } from '@/components/business/BusinessButton'，用 variant 和 size props 控制样式。

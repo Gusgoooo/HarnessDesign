@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
-import { autoClassControls } from "@/design-tokens/tw-class-audit";
+import { autoClassControls, spreadAutoPreviewProps, type ClassOverrideArgs } from "@/design-tokens/tw-class-audit";
+import { cn } from "@/lib/utils";
 import componentSrc from "./table.tsx?raw";
 import * as Comp from "./table";
 
@@ -10,12 +11,15 @@ type Args = { [k: string]: string };
 
 const meta = {
   title: "Table",
-  tags: ["autodocs"],
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({}),
   },
   args: { ...audit.args },
-  argTypes: { ...audit.argTypes } as Meta<Args>["argTypes"],
+  argTypes: {
+    className: { table: { disable: true } },
+    children: { table: { disable: true } },
+    ...audit.argTypes,
+  } as Meta<Args>["argTypes"],
 } satisfies Meta<Args>;
 
 export default meta;
@@ -23,25 +27,28 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: (args) => {
+    const prev = spreadAutoPreviewProps(audit, args as ClassOverrideArgs);
+    const slot = prev.previewCnSlotOverrides ?? [];
+    // table.tsx cn() 顺序：Table(#0), TableHeader(#1), TableBody(#2), TableFooter(#3), TableRow(#4), TableHead(#5), TableCell(#6), TableCaption(#7)
     return (
-      <Comp.Table className={audit.buildClassName(args)}>
-        <Comp.TableHeader>
-          <Comp.TableRow>
-            <Comp.TableHead>名称</Comp.TableHead>
-            <Comp.TableHead>状态</Comp.TableHead>
-            <Comp.TableHead className="text-right">金额</Comp.TableHead>
+      <Comp.Table className={prev.className}>
+        <Comp.TableHeader className={slot[0]}>
+          <Comp.TableRow className={slot[3]}>
+            <Comp.TableHead className={slot[4]}>名称</Comp.TableHead>
+            <Comp.TableHead className={slot[4]}>状态</Comp.TableHead>
+            <Comp.TableHead className={cn(slot[4], "text-right")}>金额</Comp.TableHead>
           </Comp.TableRow>
         </Comp.TableHeader>
-        <Comp.TableBody>
-          <Comp.TableRow>
-            <Comp.TableCell className="font-medium">订单 001</Comp.TableCell>
-            <Comp.TableCell>已完成</Comp.TableCell>
-            <Comp.TableCell className="text-right">¥250.00</Comp.TableCell>
+        <Comp.TableBody className={slot[1]}>
+          <Comp.TableRow className={slot[3]}>
+            <Comp.TableCell className={cn(slot[5], "font-medium")}>订单 001</Comp.TableCell>
+            <Comp.TableCell className={slot[5]}>已完成</Comp.TableCell>
+            <Comp.TableCell className={cn(slot[5], "text-right")}>¥250.00</Comp.TableCell>
           </Comp.TableRow>
-          <Comp.TableRow>
-            <Comp.TableCell className="font-medium">订单 002</Comp.TableCell>
-            <Comp.TableCell>处理中</Comp.TableCell>
-            <Comp.TableCell className="text-right">¥150.00</Comp.TableCell>
+          <Comp.TableRow className={slot[3]}>
+            <Comp.TableCell className={cn(slot[5], "font-medium")}>订单 002</Comp.TableCell>
+            <Comp.TableCell className={slot[5]}>处理中</Comp.TableCell>
+            <Comp.TableCell className={cn(slot[5], "text-right")}>¥150.00</Comp.TableCell>
           </Comp.TableRow>
         </Comp.TableBody>
       </Comp.Table>

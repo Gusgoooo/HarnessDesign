@@ -741,7 +741,7 @@ export function DesignTokenPage() {
       {/* ── Token 编辑弹框 ── */}
       <dialog
         ref={dialogRef}
-        className="rounded-xl border border-border bg-card p-0 text-card-foreground shadow-2xl backdrop:bg-black/50"
+        className="rounded-xl border border-border bg-card p-0 text-card-foreground shadow-2xl backdrop:bg-zinc-950/30 backdrop:backdrop-blur-md"
         style={{
           width: "min(560px, calc(100vw - 2rem))",
           minWidth: 340,
@@ -816,7 +816,7 @@ export function DesignTokenPage() {
       {/* ── 代码查看/编辑模态框 ── */}
       <dialog
         ref={codeDialogRef}
-        className="fixed top-1/2 left-1/2 z-50 m-0 w-[calc(100vw-4rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-card p-0 text-card-foreground shadow-2xl backdrop:bg-black/50"
+        className="fixed top-1/2 left-1/2 z-50 m-0 w-[calc(100vw-4rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-card p-0 text-card-foreground shadow-2xl backdrop:bg-zinc-950/30 backdrop:backdrop-blur-md"
         onClose={() => setCodeOpen(false)}
         onClick={(e) => { if (e.target === codeDialogRef.current) setCodeOpen(false); }}
       >

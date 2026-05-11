@@ -182,6 +182,28 @@ HarnessUI 内置 23 个生产就绪的组件，每个组件均配有 `.spec.json
 
 ## 设计令牌系统
 
+### 与「线上 / 产品」真源保持一致（强制约定）
+
+Harness 仓库里的 `src/design-tokens/tokens.json` 是 **Tailwind / 组件 / `sync:tokens` 的唯一消费入口**。若你们的设计平台、配置中心或内部门户才是 **唯一真源**，请遵守下面约定，避免出现「线上一套、仓库里另一套」：
+
+1. **只保留一条写入路径**  
+   - **推荐**：线上在发布或保存时导出与本仓库 **同结构的** `tokens.json`（v2：`version` + `seed` + …），由 CI 或定时任务拉取并覆盖仓库文件。  
+   - 使用本仓库提供的拉取脚本（在 kit 根目录执行）：
+     ```bash
+     HARNESS_TOKENS_URL=https://你的域名/path/tokens.json npm run sync:tokens:pull
+     ```
+     需要鉴权时在 CI 里配置 `HARNESS_TOKENS_AUTH_HEADER`（例如 `Bearer <token>`），**不要**把密钥写进仓库。  
+     消费者在 `.harness` 子目录维护时，可指定根目录：
+     ```bash
+     node scripts/pull-product-tokens.mjs --url=https://... --root=/path/to/你的项目/.harness
+     ```
+2. **本地 Storybook「DesignToken」页**  
+   在跑 `npm run storybook` 且命中 `/api/save-design-tokens` 时，保存会写 `tokens.json` 并执行 `npm run sync:tokens`。这只适合 **把该页当作线上的代理编辑面** 或 **临时调试**；若线上已是真源，团队应约定：**日常改色在线上完成 → 只通过 pull 脚本或等价流水线进仓**，避免设计师在 Storybook 与线上各改一份。
+3. **形状一致**  
+   线上导出的 JSON 必须符合本仓库 `emit-design-tokens-css.mjs` 所支持的 **v2 Seed→Map**（或 v1 `tokens` 数组）。若线上字段名不同，需要在你们侧增加 **一层导出适配**（映射为与本仓库 `tokens.json` 相同形状），否则无法保证派生 CSS 与组件一致。
+
+做到以上三点，**可视化与改色在线上**、**代码侧始终由同一份 JSON 经 `sync:tokens` 生成物**，即可视为与真源一致。
+
 ### Seed → Map 管线
 
 HarnessUI 采用受 Ant Design 令牌体系启发的**双层令牌架构**：

@@ -1,16 +1,17 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
-import { autoClassControls } from "@/design-tokens/tw-class-audit";
+import { autoClassControls, spreadAutoPreviewProps, type ClassOverrideArgs } from "@/design-tokens/tw-class-audit";
 import componentSrc from "./progress.tsx?raw";
 import { Progress } from "./progress";
 
-const audit = autoClassControls(componentSrc);
+const audit = autoClassControls(componentSrc, {
+  hidePrefixes: ["duration"],
+});
 
 type Args = { value: number; [k: string]: unknown };
 
 const meta: Meta<Args> = {
   title: "Progress",
-  tags: ["autodocs"],
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["value", "children"] }),
   },
@@ -27,9 +28,13 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  args: {
+    h: "2"
+  },
+
   render: (args) => (
     <div className="w-[360px]">
-      <Progress value={args.value} className={audit.buildClassName(args as Record<string, string>)} />
+      <Progress value={args.value} className={spreadAutoPreviewProps(audit, args as ClassOverrideArgs).className} />
     </div>
-  ),
+  )
 };

@@ -2,6 +2,31 @@ export function patternToString(p) {
   return typeof p.pattern === "string" ? p.pattern : String(p.pattern);
 }
 
+function normalizePrimitiveEntry(p) {
+  if (typeof p === "string") return { symbol: p.trim(), displayName: null };
+  if (p && typeof p === "object" && typeof p.symbol === "string") {
+    const symbol = p.symbol.trim();
+    const displayName =
+      typeof p.displayName === "string" && p.displayName.trim() ? p.displayName.trim() : null;
+    return { symbol, displayName };
+  }
+  return { symbol: "", displayName: null };
+}
+
+/** 将 wraps.primitives 渲染为 .cursorrules 可读片段 */
+function formatPrimitivesForRules(prims) {
+  if (!Array.isArray(prims) || prims.length === 0) return "（未列出）";
+  const bits = prims
+    .map(normalizePrimitiveEntry)
+    .filter((x) => x.symbol)
+    .map(({ symbol, displayName }) =>
+      displayName && displayName !== symbol
+        ? `\`${symbol}\`（展示名：${displayName}）`
+        : `\`${symbol}\``,
+    );
+  return bits.length ? bits.join("、") : "（未列出）";
+}
+
 /** @param {any[]} specs */
 export function renderCursorrules(specs) {
   const forbidden = specs.flatMap((s) => [
@@ -29,7 +54,7 @@ export function renderCursorrules(specs) {
 
   const lines = [];
   lines.push(
-    "# AI Component Harness — 自动生成，请勿手改（修改请编辑 schema 后运行 npm run sync:harness 或 npm run generate:rules）",
+    "# Harness AI schema — 自动生成，请勿手改（修改 `*.spec.json` 后运行 npm run sync:harness 或 npm run generate:rules）",
   );
   lines.push("");
   lines.push("## 核心契约（AI 必须遵守）");
@@ -77,11 +102,13 @@ export function renderCursorrules(specs) {
     }
   });
   lines.push("");
-  lines.push("## 组件意图与 AI 指令");
+  lines.push("## 组件意图与 AI schema");
   specs.forEach((s) => {
     lines.push(`### ${s.componentName}`);
-    lines.push(`- **Intent**: ${s.intent}`);
-    lines.push(`- **AI**: ${s.aiPrompt}`);
+    lines.push(`- **上游模块**: \`${s.wraps?.module ?? "（未配置）"}\``);
+    lines.push(`- **子组件（AI schema）**: ${formatPrimitivesForRules(s.wraps?.primitives)}`);
+    lines.push(`- **Intent（业务意图）**: ${s.intent}`);
+    lines.push(`- **AI schema 指令**: ${s.aiPrompt}`);
     const ex = s.examples ?? [];
     if (ex.length > 0) {
       lines.push("- **Few-shot 示例**（优先模仿结构与 import）：");
@@ -102,7 +129,14 @@ export function renderCursorrules(specs) {
         if (!frag || typeof frag !== "object") continue;
         lines.push(`  - **\`${sid}\`**`);
         if (frag.intent) lines.push(`    - Intent: ${frag.intent}`);
-        if (frag.aiPrompt) lines.push(`    - AI: ${frag.aiPrompt}`);
+        if (frag.aiPrompt) lines.push(`    - AI schema 指令: ${frag.aiPrompt}`);
+        if (frag.wraps && (frag.wraps.module || (frag.wraps.primitives && frag.wraps.primitives.length > 0))) {
+          lines.push(`    - **上游 / 子组件（变体覆盖）**`);
+          if (frag.wraps.module) lines.push(`      - 模块: \`${frag.wraps.module}\``);
+          if (frag.wraps.primitives?.length) {
+            lines.push(`      - 子组件: ${formatPrimitivesForRules(frag.wraps.primitives)}`);
+          }
+        }
         const vex = frag.examples ?? [];
         if (vex.length > 0) {
           for (const item of vex) {

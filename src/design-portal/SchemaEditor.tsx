@@ -84,12 +84,12 @@ export function SchemaEditor({ defaultFilename = "data-table.spec.json" }: Schem
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-4 p-8">
       <header className="space-y-1 border-b border-zinc-700 pb-4">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Harness Schema</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Harness · AI schema</h1>
         <p className="text-sm text-zinc-400">
-          直接编辑结构化 spec（JSON），规则均为手写落盘，不经产品内 AI；保存后自动同步 Tailwind、
-          <code className="rounded bg-zinc-800 px-1 py-0.5 text-xs text-zinc-200">.cursorrules</code> 与{" "}
+          在此直接编辑 <code className="rounded bg-zinc-800 px-1 py-0.5 text-xs text-zinc-200">*.spec.json</code>（真源为手写落盘，不经云端模型改写）；保存后自动同步
+          Tailwind 生成物、<code className="rounded bg-zinc-800 px-1 py-0.5 text-xs text-zinc-200">.cursorrules</code> 与{" "}
           <code className="rounded bg-zinc-800 px-1 py-0.5 text-xs text-zinc-200">HARNESS_RULES.md</code>。
-          Storybook「Harness」面板提供更简的分栏编辑；完整字段（Props、styleLock 等）可在此 JSON 中维护。
+          Storybook 右侧「AI schema」面板提供分栏编辑（含子组件展示名、Intent、指令等）；Props / styleLock 等完整字段也可在此 JSON 中维护。
         </p>
       </header>
 

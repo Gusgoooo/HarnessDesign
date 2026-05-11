@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
-import { autoClassControls } from "@/design-tokens/tw-class-audit";
+import { autoClassControls, spreadAutoPreviewProps, type ClassOverrideArgs } from "@/design-tokens/tw-class-audit";
 import componentSrc from "./kbd.tsx?raw";
 import * as Comp from "./kbd";
 
@@ -10,7 +10,6 @@ type Args = { [k: string]: string };
 
 const meta = {
   title: "Kbd",
-  tags: ["autodocs"],
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({}),
   },
@@ -23,11 +22,12 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: (args) => {
+    const prev = spreadAutoPreviewProps(audit, args as ClassOverrideArgs);
     return (
       <div className="flex items-center gap-2">
-        <Comp.Kbd className={audit.buildClassName(args)}>⌘</Comp.Kbd>
+        <Comp.Kbd className={prev.className}>⌘</Comp.Kbd>
         <span className="text-sm text-muted-foreground">+</span>
-        <Comp.Kbd>K</Comp.Kbd>
+        <Comp.Kbd className={prev.className}>K</Comp.Kbd>
       </div>
     );
   },

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
-import { autoClassControls } from "@/design-tokens/tw-class-audit";
+import { autoClassControls, spreadAutoPreviewProps, type ClassOverrideArgs } from "@/design-tokens/tw-class-audit";
 import componentSrc from "./checkbox.tsx?raw";
 import { Checkbox } from "./checkbox";
 import { Label } from "./label";
@@ -9,7 +9,6 @@ const audit = autoClassControls(componentSrc);
 
 const meta = {
   title: "Checkbox",
-  tags: ["autodocs"],
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["children", "id"] }),
   },
@@ -27,7 +26,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   render: (args) => (
       <div className="flex items-center gap-2">
-        <Checkbox id="terms" className={audit.buildClassName(args as unknown as Record<string, string>)} />
+        <Checkbox id="terms" className={spreadAutoPreviewProps(audit, args as ClassOverrideArgs).className} />
         <Label htmlFor="terms">同意条款</Label>
       </div>
     ),

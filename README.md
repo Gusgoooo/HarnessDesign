@@ -182,6 +182,21 @@ HarnessUI ships 23 production-ready components, each with a `.spec.json` schema,
 
 ## Design Token System
 
+### Staying aligned with a remote “source of truth”
+
+`src/design-tokens/tokens.json` is the **only file** this kit consumes for `sync:tokens`. If your **product / hosted token studio** is the canonical editor:
+
+1. **Single write path** — Export the same JSON shape (v2 `version` + `seed` + …, or legacy v1 `tokens[]`) from your platform and **overwrite** `tokens.json` via CI. Use:
+   ```bash
+   HARNESS_TOKENS_URL=https://your.cdn.example.com/design/tokens.json npm run sync:tokens:pull
+   ```
+   Optional: `HARNESS_TOKENS_AUTH_HEADER` for `Bearer …` (set in CI secrets, never commit tokens).
+   For a consumer `.harness` subfolder: `node scripts/pull-product-tokens.mjs --url=… --root=/path/to/.harness`
+2. **Storybook DesignToken page** — Still writes via `/api/save-design-tokens` when running `npm run storybook`. Treat it as a **mirror** or emergency edit; if remote is canonical, prefer **pull → commit** as the routine.
+3. **Shape contract** — If your remote uses different keys, add an **export adapter** on your side so the payload matches this repo’s `tokens.json` schema before pull.
+
+English README mirrors the workflow; see **README.zh-CN.md** for the full Chinese checklist.
+
 ### Seed → Map Pipeline
 
 HarnessUI uses a **two-layer token architecture** inspired by Ant Design's token system:

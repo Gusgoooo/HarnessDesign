@@ -69,12 +69,14 @@ export const AlignWithButtons: Story = {
   render: (args) => (
     <div className="flex w-[min(100%,520px)] flex-col gap-6">
       {(["sm", "default", "lg"] as const).map((sz) => (
-        <div key={sz} className="flex flex-wrap items-center gap-2">
+        <div key={sz} className="flex flex-nowrap items-center gap-2">
           <span className="w-14 shrink-0 text-xs text-muted-foreground">{sz}</span>
-          <Button type="button" size={sz}>
+          <Button type="button" size={sz} className="shrink-0">
             按钮
           </Button>
-          <Input type="text" placeholder="输入" size={sz} disabled={args.disabled} className="max-w-[200px]" />
+          <div className="w-[200px] min-w-0 shrink-0">
+            <Input type="text" placeholder="输入" size={sz} disabled={args.disabled} className="w-full" />
+          </div>
         </div>
       ))}
     </div>

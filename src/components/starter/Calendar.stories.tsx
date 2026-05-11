@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
-import { autoClassControls } from "@/design-tokens/tw-class-audit";
+import { autoClassControls, spreadAutoPreviewProps, type ClassOverrideArgs } from "@/design-tokens/tw-class-audit";
 import componentSrc from "./calendar.tsx?raw";
 import * as Comp from "./calendar";
 
@@ -10,7 +10,6 @@ type Args = { [k: string]: string };
 
 const meta = {
   title: "Calendar",
-  tags: ["autodocs"],
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({}),
   },
@@ -22,8 +21,15 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  render: (args) => {
-    return (<Comp.Calendar mode="single" className={audit.buildClassName(args)} />
-    );
+  args: {
+    gap: "2",
+    rounded: "lg"
   },
+
+  render: (args) => (
+    <Comp.Calendar
+      mode="single"
+      {...spreadAutoPreviewProps(audit, args as ClassOverrideArgs)}
+    />
+  )
 };

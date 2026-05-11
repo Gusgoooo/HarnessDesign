@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
-import { autoClassControls } from "@/design-tokens/tw-class-audit";
+import { autoClassControls, spreadAutoPreviewProps, type ClassOverrideArgs } from "@/design-tokens/tw-class-audit";
 import componentSrc from "./popover.tsx?raw";
 import { Popover, PopoverTrigger, PopoverContent } from "./popover";
 import { Button } from "./button";
@@ -9,7 +9,6 @@ const audit = autoClassControls(componentSrc);
 
 const meta = {
   title: "Popover",
-  tags: ["autodocs"],
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["children"] }),
   },
@@ -30,7 +29,7 @@ export const Default: Story = {
         <PopoverTrigger asChild>
           <Button variant="outline">打开弹出框</Button>
         </PopoverTrigger>
-        <PopoverContent className={audit.buildClassName(args as unknown as Record<string, string>)}>
+        <PopoverContent className={spreadAutoPreviewProps(audit, args as ClassOverrideArgs).className}>
           <div className="grid gap-4">
             <div className="text-sm font-medium">弹出框标题</div>
             <div className="text-sm text-muted-foreground">这是弹出框的内容。</div>

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
-import { autoClassControls } from "@/design-tokens/tw-class-audit";
+import { autoClassControls, spreadAutoPreviewProps, type ClassOverrideArgs } from "@/design-tokens/tw-class-audit";
 import componentSrc from "./hover-card.tsx?raw";
 import * as Comp from "./hover-card";
 
@@ -10,7 +10,6 @@ type Args = { [k: string]: string };
 
 const meta = {
   title: "HoverCard",
-  tags: ["autodocs"],
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({}),
   },
@@ -26,7 +25,7 @@ export const Default: Story = {
     return (
       <Comp.HoverCard>
         <Comp.HoverCardTrigger asChild><button className="text-sm underline">悬停查看</button></Comp.HoverCardTrigger>
-        <Comp.HoverCardContent className={audit.buildClassName(args)}>
+        <Comp.HoverCardContent className={spreadAutoPreviewProps(audit, args as ClassOverrideArgs).className}>
           <div className="space-y-1">
             <h4 className="text-sm font-semibold">Hover Card</h4>
             <p className="text-sm text-muted-foreground">这是悬浮卡片的内容。</p>

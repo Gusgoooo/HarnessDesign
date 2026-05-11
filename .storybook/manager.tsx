@@ -8,6 +8,12 @@ import {
   type API,
 } from "storybook/internal/manager-api";
 import type { API_ComponentEntry, API_HashEntry } from "storybook/internal/types";
+import {
+  normalizePrimitives,
+  serializePrimitives,
+  type WrapPrimitiveInput,
+  type WrapPrimitiveRef,
+} from "../src/harness/schema/types";
 
 /* ── 暗色模式基础 ── */
 const DARK_KEY = "harness-dark-mode";
@@ -544,14 +550,14 @@ function SidebarTop() {
   );
 }
 
-/* ── Harness 面板：与当前 Story 关联的 Schema 结构化编辑（可选工作流；规范源仍为 *.spec.json） ── */
+/* ── AI schema 面板：与当前 Story 关联的规范编辑（落盘 *.spec.json；可选 storyHarness 变体层） ── */
 
 type SpecData = {
   id: string;
   componentName: string;
   version: string;
   intent: string;
-  wraps: { module: string; primitives: string[] };
+  wraps: { module: string; primitives: WrapPrimitiveRef[] };
   requiredProps: { name: string; description: string; type: string; required: boolean; defaultValue?: unknown; enumMap?: Record<string, string[]> }[];
   optionalProps?: { name: string; description: string; type: string; required: boolean; defaultValue?: unknown; enumMap?: Record<string, string[]> }[];
   styleLock: { baselineTokens: string[]; blacklist: { description: string; pattern: string }[] };
@@ -642,13 +648,53 @@ function extractHarnessPatch(edited: SpecData, base: SpecData): Record<string, u
 function normalizeSpecBaseFromRaw(raw: Record<string, unknown>): SpecData {
   const { harnessNarrative: _hn, storyHarness: _sh, ...rest } = raw;
   const r = rest as SpecData;
+  const wrapsRaw = raw.wraps;
+  const wraps: SpecData["wraps"] =
+    wrapsRaw && typeof wrapsRaw === "object"
+      ? {
+          module:
+            typeof (wrapsRaw as Record<string, unknown>).module === "string"
+              ? ((wrapsRaw as Record<string, unknown>).module as string)
+              : "",
+          primitives: normalizePrimitives(
+            (wrapsRaw as Record<string, unknown>).primitives as WrapPrimitiveInput[],
+          ),
+        }
+      : { module: "", primitives: [] };
   return {
     ...r,
+    wraps,
     forbidden: Array.isArray(raw.forbidden) ? raw.forbidden as SpecData["forbidden"] : [],
     corrections: Array.isArray(raw.corrections) ? raw.corrections as SpecData["corrections"] : [],
     examples: Array.isArray(raw.examples) ? raw.examples as SpecData["examples"] : [],
     referencePriority: Array.isArray(raw.referencePriority) ? raw.referencePriority as string[] : [],
   };
+}
+
+/** 落盘前压缩 primitives 写法，并递归处理 storyHarness 片段 */
+function compactSpecForDisk(doc: Record<string, unknown>): Record<string, unknown> {
+  function compactWraps(w: unknown): unknown {
+    if (!w || typeof w !== "object") return w;
+    const o = w as Record<string, unknown>;
+    const pr = normalizePrimitives(o.primitives as WrapPrimitiveInput[]);
+    return { ...o, primitives: serializePrimitives(pr) };
+  }
+  const out = { ...doc };
+  if (out.wraps) out.wraps = compactWraps(out.wraps);
+  const sh = out.storyHarness;
+  if (sh && typeof sh === "object") {
+    const next: Record<string, unknown> = { ...(sh as Record<string, unknown>) };
+    for (const [k, frag] of Object.entries(next)) {
+      if (frag && typeof frag === "object" && (frag as Record<string, unknown>).wraps != null) {
+        next[k] = {
+          ...(frag as Record<string, unknown>),
+          wraps: compactWraps((frag as Record<string, unknown>).wraps),
+        };
+      }
+    }
+    out.storyHarness = next;
+  }
+  return out;
 }
 
 const HS = {
@@ -756,7 +802,7 @@ function ExamplesEditor({ examples, onChange }: { examples: NonNullable<SpecData
           />
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
             <div style={HS.label}>最小 JSX</div>
-            <InfoTip text="Few-shot 片段；保存并经 sync 后写入 .cursorrules。" />
+            <InfoTip text="最小可运行 JSX；保存并经 sync 后写入 .cursorrules，作为模型模仿结构与 import 的样板。" />
           </div>
           <textarea
             style={{ ...HS.mono, minHeight: 64 }}
@@ -813,6 +859,82 @@ function BlacklistEditor({ rules, onChange }: { rules: SpecData["styleLock"]["bl
       <button type="button" style={{ ...HS.btn(), fontSize: 11, marginTop: 6 }} onClick={() => {
         onChange([...rules, { description: "", pattern: "" }]);
       }}>+ 添加黑名单规则</button>
+    </div>
+  );
+}
+
+function PrimitivesEditor({
+  primitives,
+  onChange,
+}: {
+  primitives: WrapPrimitiveRef[];
+  onChange: (next: WrapPrimitiveRef[]) => void;
+}) {
+  const rows = primitives.length > 0 ? primitives : [{ symbol: "" }];
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {rows.map((row, i) => (
+        <div
+          key={i}
+          style={{
+            display: "flex",
+            gap: 8,
+            flexWrap: "wrap" as const,
+            alignItems: "flex-end",
+            padding: "8px 0",
+            borderBottom: "1px solid var(--mgr-bg-subtle)",
+          }}
+        >
+          <div style={{ flex: "1 1 140px", minWidth: 100 }}>
+            <div style={HS.label}>导出符号 symbol</div>
+            <input
+              style={{ ...HS.input, fontFamily: "ui-monospace,monospace", fontSize: 12 }}
+              placeholder="如 TableCell、DialogContent"
+              value={row.symbol}
+              onChange={(e) => {
+                const next = [...primitives];
+                const sym = e.target.value;
+                if (!next[i]) next[i] = { symbol: sym };
+                else next[i] = { ...next[i], symbol: sym };
+                onChange(next);
+              }}
+            />
+          </div>
+          <div style={{ flex: "1 1 160px", minWidth: 100 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <span style={HS.label}>AI schema 展示名</span>
+              <InfoTip text="可与代码符号不同：写入 .cursorrules 时带上中文/业务称呼，便于模型理解子组件职责；留空则仅用 symbol。" />
+            </div>
+            <input
+              style={HS.input}
+              placeholder="默认同 symbol，如：表头单元格"
+              value={row.displayName ?? ""}
+              onChange={(e) => {
+                const next = [...primitives];
+                const base = next[i] ?? { symbol: "" };
+                const v = e.target.value;
+                const trimmed = v.trim();
+                next[i] = trimmed ? { ...base, displayName: trimmed } : { symbol: base.symbol };
+                onChange(next);
+              }}
+            />
+          </div>
+          <button
+            type="button"
+            style={{ ...HS.btn(), fontSize: 11, flexShrink: 0 }}
+            onClick={() => onChange(primitives.filter((_, j) => j !== i))}
+          >
+            删除
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        style={{ ...HS.btn(), fontSize: 12 }}
+        onClick={() => onChange([...primitives, { symbol: "" }])}
+      >
+        + 添加子组件
+      </button>
     </div>
   );
 }
@@ -928,8 +1050,10 @@ function CreateSchemaPrompt({ leafTitle, onCreated }: { leafTitle: string; onCre
 
   return (
     <div style={{ ...HS.wrap, alignItems: "center", justifyContent: "center", color: "var(--mgr-text-tertiary)", gap: 12, padding: 24, textAlign: "center" as const }}>
-      <div style={{ fontSize: 14, fontWeight: 500, color: "var(--mgr-text-secondary)" }}>{leafTitle}</div>
-      <div>该组件尚未创建 Harness Schema</div>
+          <div style={{ fontSize: 14, fontWeight: 500, color: "var(--mgr-text-secondary)" }}>{leafTitle}</div>
+      <div style={{ fontSize: 12, lineHeight: 1.5, maxWidth: 320 }}>
+        尚未创建该组件的 <strong>AI schema</strong> 规范（<code style={{ fontSize: 11 }}>*.spec.json</code>）
+      </div>
       <button
         type="button"
         disabled={busy}
@@ -943,7 +1067,7 @@ function CreateSchemaPrompt({ leafTitle, onCreated }: { leafTitle: string; onCre
           gap: 6,
         }}
       >
-        <IcoPlus /> {busy ? "创建中…" : "创建 Harness Schema"}
+        <IcoPlus /> {busy ? "创建中…" : "创建 AI schema 规范"}
       </button>
       {error && <div style={{ fontSize: 12, color: "#dc2626", maxWidth: 300 }}>{error}</div>}
     </div>
@@ -1007,7 +1131,15 @@ function HarnessPanel() {
       return;
     }
     const frag = storyHarnessMap[harnessCtx.storyId];
-    setSpec(deepMergeSpecData(baseCore, frag ?? {}));
+    const merged = deepMergeSpecData(baseCore, frag ?? {});
+    setSpec({
+      ...merged,
+      wraps: {
+        ...(merged.wraps ?? {}),
+        module: merged.wraps?.module ?? "",
+        primitives: normalizePrimitives((merged.wraps?.primitives ?? []) as WrapPrimitiveInput[]),
+      },
+    });
   }, [baseCore, storyHarnessMap, harnessCtx.storyId, harnessCtx.isStory]);
 
   function update<K extends keyof SpecData>(key: K, val: SpecData[K]) {
@@ -1018,12 +1150,19 @@ function HarnessPanel() {
   async function save() {
     if (!spec || !filename || !baseCore) return;
     if (!harnessCtx.isStory || !harnessCtx.storyId) {
-      setStatus({ text: "请从侧栏选择一条 Story 变体后再保存（Docs 总览无法对应单一变体）。", ok: false });
+      setStatus({ text: "请从侧栏选择一条具体 Story 变体后再保存（分组根节点 / 画布总览无法对应单一 storyId）。", ok: false });
       return;
     }
     setStatus(null);
     try {
-      const patch = extractHarnessPatch(spec, baseCore);
+      const pruned: SpecData = {
+        ...spec,
+        wraps: {
+          ...spec.wraps,
+          primitives: normalizePrimitives(spec.wraps.primitives as WrapPrimitiveInput[]),
+        },
+      };
+      const patch = extractHarnessPatch(pruned, baseCore);
       const newMap = { ...storyHarnessMap };
       if (!patch) delete newMap[harnessCtx.storyId];
       else newMap[harnessCtx.storyId] = patch;
@@ -1031,7 +1170,7 @@ function HarnessPanel() {
       if (Object.keys(newMap).length > 0) doc.storyHarness = newMap;
       const r = await fetch(devApi("/api/save-schema"), {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename, jsonText: JSON.stringify(doc, null, 2) }),
+        body: JSON.stringify({ filename, jsonText: JSON.stringify(compactSpecForDisk(doc), null, 2) }),
       });
       const b = await r.json().catch(() => ({})) as {
         ok?: boolean;
@@ -1079,7 +1218,9 @@ function HarnessPanel() {
     return (
       <div style={{ ...HS.wrap, alignItems: "center", justifyContent: "center", color: "var(--mgr-text-tertiary)", gap: 10, padding: 24, textAlign: "center" as const, maxWidth: 360 }}>
         <div style={{ fontSize: 14, fontWeight: 500, color: "var(--mgr-text-secondary)" }}>{harnessCtx.leafTitle}</div>
-        <div>Harness 按 <strong>Story 变体</strong> 编辑：请在左侧树中点开本组件，选择一条具体 Story（非 Docs 总览）。</div>
+        <div style={{ fontSize: 12, lineHeight: 1.55 }}>
+          <strong>AI schema</strong> 面板按 <strong>Story 变体</strong> 写入：请在左侧树展开本组件，点选一条具体 Story（不要停在分组根或仅画布预览）。
+        </div>
       </div>
     );
   }
@@ -1115,14 +1256,14 @@ function HarnessPanel() {
 
       <div style={{ ...HS.body, flex: 1, minHeight: 0, overflow: "auto" }}>
         <CollapsibleSection
-          title="Harness 规则（设计师）"
-          hint="编辑结果写入当前 Story 变体（storyHarness[storyId]），与组件顶层基准深度合并后进 .cursorrules；与侧栏其他变体互不覆盖。Intent / AI Prompt / 主路径为常用项。"
+          title="AI schema · 业务意图与依赖"
+          hint="与当前 Story 变体绑定：保存后写入 storyHarness[storyId]，与顶层 spec 深度合并，再经 sync 进入 .cursorrules；各变体互不影响。常用：Intent、schema 指令、首选 import。"
           defaultOpen={true}
         >
           <div style={HS.field}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={HS.label}>业务意图 Intent</div>
-              <InfoTip text="短句、可判定：何时用本组件、禁止什么（建议「若…则必须用 X」）。" />
+              <div style={HS.label}>业务意图（Intent）</div>
+              <InfoTip text="可判定的一句话：何时必须用本组件、与兄弟组件如何分工、禁止的典型误用（建议写成「若…则…」）。" />
             </div>
             <textarea
               style={HS.textarea}
@@ -1133,20 +1274,20 @@ function HarnessPanel() {
           </div>
           <div style={HS.field}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={HS.label}>AI Prompt（进 .cursorrules）</div>
-              <InfoTip text="给代码助手 / Cursor 的硬约束：import、variant、禁止手写类等。" />
+              <div style={HS.label}>Schema 指令（写入 .cursorrules）</div>
+              <InfoTip text="给代码助手的硬条款：import 别名、variant/density 取值、禁止手写的 Tailwind 模式等；短句、可执行，避免散文。" />
             </div>
             <textarea
               style={{ ...HS.textarea, minHeight: 80 }}
-              placeholder={'若危险操作，则必须用 variant="destructive"；禁止散文与模糊词。'}
+              placeholder={'危险操作须 variant="destructive"；禁止在业务侧覆盖 styleLock 中的间距/品牌色类。'}
               value={spec.aiPrompt}
               onChange={e => update("aiPrompt", e.target.value)}
             />
           </div>
           <div style={HS.field}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={HS.label}>主 import 路径（推荐一条）</div>
-              <InfoTip text="优先唯一路径，减少模型乱选；多路径在「高级」里编辑完整列表。" />
+              <div style={HS.label}>首选 import 路径</div>
+              <InfoTip text="只填一条最推荐路径，降低模型乱选；若有多条合法入口，在下方「引用优先」完整列表中维护。" />
             </div>
             <input
               style={{ ...HS.input, fontFamily: "ui-monospace,monospace" }}
@@ -1162,13 +1303,13 @@ function HarnessPanel() {
         </CollapsibleSection>
 
         <CollapsibleSection
-          title="规则明细：禁止 / 纠错 / Few-shot（建议前端维护）"
-          hint="与 harness-audit、.cursorrules 强对齐：原生标签禁止项、违规→修复、示例 JSX。不熟悉可交给前端同学填写。"
+          title="AI schema · 禁止项、纠错与 Few-shot"
+          hint="与 harness-audit、`.cursorrules` 对齐：原生标签替代关系、可判定违规→修复话术、可直接复制的最小 JSX；建议由熟悉业务语义的同学维护。"
           defaultOpen={false}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-            <div style={{ ...HS.sectionTitle, marginBottom: 0 }}>禁止项 Forbidden</div>
-            <InfoTip text="每条：标签 + 原因 + 请改用；与审计里「不要用某原生标签」一致。" />
+            <div style={{ ...HS.sectionTitle, marginBottom: 0 }}>禁止项（Forbidden）</div>
+            <InfoTip text="每条包含：HTML 标签、为何禁止、应改用的业务组件 import；与审计提示一一对应。" />
           </div>
           {(spec.forbidden ?? []).map((f, i) => (
             <div key={i} style={{ border: "1px solid var(--mgr-border)", borderRadius: 6, padding: 10, marginBottom: 8, background: "var(--mgr-bg-muted)" }}>
@@ -1202,8 +1343,8 @@ function HarnessPanel() {
           }}>+ 添加禁止项</button>
 
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 14, marginBottom: 8 }}>
-            <div style={{ ...HS.sectionTitle, marginBottom: 0 }}>纠错 Corrections</div>
-            <InfoTip text="违规与改法成对：可判定的违规描述 + 修复指令。" />
+            <div style={{ ...HS.sectionTitle, marginBottom: 0 }}>纠错（Corrections）</div>
+            <InfoTip text="「可判定违规」与「修复指令」成对：前者用于 grep/审计，后者直接给模型照做。" />
           </div>
           {(spec.corrections ?? []).map((c, i) => (
             <div key={i} style={{ border: "1px solid var(--mgr-border)", borderRadius: 6, padding: 10, marginBottom: 8, background: "var(--mgr-bg-muted)" }}>
@@ -1236,14 +1377,14 @@ function HarnessPanel() {
 
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 14, marginBottom: 8 }}>
             <div style={{ ...HS.sectionTitle, marginBottom: 0 }}>Few-shot 示例</div>
-            <InfoTip text="每组件 1～2 条最小 JSX；保存后经 sync 写入 .cursorrules。" />
+            <InfoTip text="每组件 1～2 条：标题 + 可选一句场景说明 + 最小 JSX；保存并经 sync 写入 .cursorrules，供模型模仿结构与 import。" />
           </div>
           <ExamplesEditor examples={spec.examples ?? []} onChange={ex => update("examples", ex)} />
         </CollapsibleSection>
 
         <CollapsibleSection
-          title="高级：元数据 · 上游 · Props · 样式锁定 · 完整引用列表"
-          hint="组件名、wraps、Props、styleLock、多行 referencePriority；供工程 / 设计系统维护。"
+          title="工程字段：标识、上游子组件、Props、样式锁定与引用列表"
+          hint="组件 id / 版本、wraps.module 与子组件 symbol、Props 类型与 enumMap JSON、styleLock 正则、referencePriority 多行；供设计系统或工程角色维护。"
           defaultOpen={false}
         >
           <div style={HS.section}>
@@ -1265,17 +1406,18 @@ function HarnessPanel() {
           </div>
 
           <div style={HS.section}>
-            <div style={HS.sectionTitle}>上游封装</div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <div style={{ ...HS.field, flex: 1 }}>
-                <div style={HS.label}>模块路径</div>
-                <input style={HS.input} value={spec.wraps.module} onChange={e => update("wraps", { ...spec.wraps, module: e.target.value })} />
-              </div>
-              <div style={{ ...HS.field, flex: 1 }}>
-                <div style={HS.label}>Primitives (逗号分隔)</div>
-                <input style={HS.input} value={spec.wraps.primitives.join(", ")} onChange={e => update("wraps", { ...spec.wraps, primitives: e.target.value.split(",").map(s => s.trim()).filter(Boolean) })} />
-              </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+              <div style={HS.sectionTitle}>上游封装 · 模块与子组件</div>
+              <InfoTip text="module 指向 starter / ui 的 re-export；子组件列表对应组合导出中的符号，可为每个符号配置 AI schema 展示名（进入 .cursorrules 时更易读）。" />
             </div>
+            <div style={{ ...HS.field, marginBottom: 12 }}>
+              <div style={HS.label}>模块路径 wraps.module</div>
+              <input style={HS.input} value={spec.wraps.module} onChange={e => update("wraps", { ...spec.wraps, module: e.target.value })} />
+            </div>
+            <PrimitivesEditor
+              primitives={spec.wraps.primitives}
+              onChange={(next) => update("wraps", { ...spec.wraps, primitives: next })}
+            />
           </div>
 
           <div style={HS.section}>
@@ -1352,6 +1494,11 @@ function HarnessPanel() {
 
 addons.setConfig({
   theme: _initDark ? darkTheme : lightTheme,
+  /** 避免误点「在新标签打开画布」进入孤立 iframe.html（无侧栏/难返回）；并关闭画布全屏按钮以免误触 */
+  toolbar: {
+    eject: { hidden: true },
+    fullscreen: { hidden: true },
+  },
   sidebar: {
     showRoots: false,
     renderLabel: (item: API_HashEntry, api: API) => {
@@ -1378,7 +1525,7 @@ addons.register("harness-design", () => {
 
   addons.add("harness-design/harness-panel", {
     type: types.PANEL,
-    title: "AI适配",
+    title: "AI schema",
     render: ({ active }) => active ? <HarnessPanel /> : null,
   });
 });

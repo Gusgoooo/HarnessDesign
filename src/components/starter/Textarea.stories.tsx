@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
-import { autoClassControls } from "@/design-tokens/tw-class-audit";
+import { autoClassControls, spreadAutoPreviewProps, type ClassOverrideArgs } from "@/design-tokens/tw-class-audit";
 import componentSrc from "./textarea.tsx?raw";
 import { Textarea } from "./textarea";
 import { Label } from "./label";
@@ -9,7 +9,6 @@ const audit = autoClassControls(componentSrc);
 
 const meta = {
   title: "Textarea",
-  tags: ["autodocs"],
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["children", "id", "placeholder", "disabled"] }),
   },
@@ -29,7 +28,7 @@ export const Default: Story = {
   render: (args) => (
       <div className="grid w-[360px] gap-2">
         <Label htmlFor="msg">消息</Label>
-        <Textarea id="msg" placeholder="请输入消息" className={audit.buildClassName(args as unknown as Record<string, string>)} />
+        <Textarea id="msg" placeholder="请输入消息" className={spreadAutoPreviewProps(audit, args as ClassOverrideArgs).className} />
       </div>
     ),
 };

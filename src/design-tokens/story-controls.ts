@@ -1,6 +1,7 @@
 import tokensDoc from "./tokens.json";
 import spacingScale from "./spacing-scale.generated.json";
 import { DESIGN_TOKENS } from "./token-registry";
+import { spacingUtilityPrefixLabelZh } from "./tw-class-audit";
 
 /** Story Controls 选项：tokenId 为 Controls 中的值，value 为映射到组件 prop 的字符串 */
 export type StoryBindingRow = { tokenId: string; label?: string; value: string };
@@ -302,8 +303,13 @@ export function tokenControls(config: TokenControlsConfig) {
       : TOKEN_SLOT_REGISTRY[baseKey];
     if (!reg) continue;
 
+    const controlDisplayName = prefix
+      ? spacingUtilityPrefixLabelZh(prefix)
+      : reg.label;
+
     args[key] = defaultVal;
     argTypes[key] = {
+      name: controlDisplayName,
       control: { type: "select" as const, labels: reg.labels },
       options: Object.keys(reg.map),
       description: reg.label,

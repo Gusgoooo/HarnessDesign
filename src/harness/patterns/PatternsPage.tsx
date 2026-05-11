@@ -213,7 +213,7 @@ export function PatternsPage() {
 
       <dialog
         ref={codeDialogRef}
-        className="fixed top-1/2 left-1/2 z-50 m-0 w-full max-w-3xl -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-card p-0 px-4 text-card-foreground shadow-2xl backdrop:bg-black/50 sm:px-0"
+        className="fixed top-1/2 left-1/2 z-50 m-0 w-full max-w-3xl -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-card p-0 px-4 text-card-foreground shadow-2xl backdrop:bg-zinc-950/30 backdrop:backdrop-blur-md sm:px-0"
         onClose={() => setCodeOpen(false)}
         onClick={(e) => {
           if (e.target === codeDialogRef.current) setCodeOpen(false);

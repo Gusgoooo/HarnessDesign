@@ -5,7 +5,14 @@
   "intent": "展示业务列表数据的主表格：分页、排序、批量操作在此收敛；禁止在业务页散落原生 <table> 与任意间距类。",
   "wraps": {
     "module": "@/components/ui/table",
-    "primitives": ["Table", "TableHeader", "TableBody", "TableRow", "TableHead", "TableCell"]
+    "primitives": [
+      "Table",
+      "TableHeader",
+      "TableBody",
+      "TableRow",
+      "TableHead",
+      { "symbol": "TableCell", "displayName": "数据单元格（TableCell）" }
+    ]
   },
   "requiredProps": [
     {

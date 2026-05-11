@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
-import { autoClassControls } from "@/design-tokens/tw-class-audit";
+import { autoClassControls, spreadAutoPreviewProps, type ClassOverrideArgs } from "@/design-tokens/tw-class-audit";
 import componentSrc from "./badge.tsx?raw";
 import { Badge } from "./badge";
 
@@ -10,7 +10,6 @@ type Args = { variant: string; [k: string]: unknown };
 
 const meta: Meta<Args> = {
   title: "Badge",
-  tags: ["autodocs"],
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["variant", "children"] }),
   },
@@ -27,18 +26,22 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  args: {
+    rounded: "sm"
+  },
+
   render: (args) => (
-    <Badge variant={args.variant as "default" | "secondary" | "destructive" | "outline"} className={audit.buildClassName(args as Record<string, string>)}>
+    <Badge variant={args.variant as "default" | "secondary" | "destructive" | "outline"} className={spreadAutoPreviewProps(audit, args as ClassOverrideArgs).className}>
       标签
     </Badge>
-  ),
+  )
 };
 
 export const AllVariants: Story = {
   render: (args) => (
     <div className="flex gap-2">
       {(["default", "secondary", "destructive", "outline"] as const).map((v) => (
-        <Badge key={v} variant={v} className={audit.buildClassName(args as Record<string, string>)}>
+        <Badge key={v} variant={v} className={spreadAutoPreviewProps(audit, args as ClassOverrideArgs).className}>
           {v}
         </Badge>
       ))}

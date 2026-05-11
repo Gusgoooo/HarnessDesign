@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
-import { autoClassControls } from "@/design-tokens/tw-class-audit";
+import { autoClassControls, spreadAutoPreviewProps, type ClassOverrideArgs } from "@/design-tokens/tw-class-audit";
 import componentSrc from "./tabs.tsx?raw";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./tabs";
 
@@ -8,7 +8,6 @@ const audit = autoClassControls(componentSrc);
 
 const meta = {
   title: "Tabs",
-  tags: ["autodocs"],
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["children", "defaultValue", "value", "onValueChange"] }),
   },
@@ -24,20 +23,24 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  render: (args) => (
+  render: (args) => {
+    const prev = spreadAutoPreviewProps(audit, args as ClassOverrideArgs);
+    const slot = prev.previewCnSlotOverrides ?? [];
+    return (
       <div className="w-[400px]">
-        <Tabs defaultValue="account" className={audit.buildClassName(args as unknown as Record<string, string>)}>
-          <TabsList>
-            <TabsTrigger value="account">账户</TabsTrigger>
-            <TabsTrigger value="password">密码</TabsTrigger>
+        <Tabs defaultValue="account" className={prev.className}>
+          <TabsList className={slot[0]}>
+            <TabsTrigger value="account" className={slot[1]}>账户</TabsTrigger>
+            <TabsTrigger value="password" className={slot[1]}>密码</TabsTrigger>
           </TabsList>
-          <TabsContent value="account">
+          <TabsContent value="account" className={slot[2]}>
             <p className="text-sm text-muted-foreground">在这里管理您的账户设置。</p>
           </TabsContent>
-          <TabsContent value="password">
+          <TabsContent value="password" className={slot[2]}>
             <p className="text-sm text-muted-foreground">在这里修改您的密码。</p>
           </TabsContent>
         </Tabs>
       </div>
-    ),
+    );
+  },
 };

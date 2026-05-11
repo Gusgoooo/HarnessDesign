@@ -83,6 +83,27 @@ export type ComponentCategory =
   | "action"
   | "other";
 
+/** 上游子组件导出符号；可与展示名拆分，供 AI schema / 规则文案使用 */
+export interface WrapPrimitiveRef {
+  /** 与 `wraps.module` 导出一致的符号，如 `DialogContent`、`TableCell` */
+  symbol: string;
+  /**
+   * 面向协作者 / 模型的可读名称（如「对话框内容」「表体行」）。
+   * 省略或与 symbol 相同时，落盘 JSON 可简写为字符串。
+   */
+  displayName?: string;
+}
+
+/** JSON 中允许 `string` 简写，等价于 `{ symbol: 该字符串 }` */
+export type WrapPrimitiveInput = string | WrapPrimitiveRef;
+
+export interface WrapsSpec {
+  /** 展示用，如 @/components/ui/table */
+  module: string;
+  /** 组合子导出列表（顺序即推荐拼装顺序） */
+  primitives: WrapPrimitiveInput[];
+}
+
 export interface ComponentSpecMeta {
   owner?: string;
   tags?: string[];
@@ -118,19 +139,14 @@ export interface ComponentSpec {
   /** 业务意图：何时用、解决什么问题 */
   intent: string;
   /** 封装的上游（Shadcn / Radix 等） */
-  wraps: {
-    /** 展示用，如 @/components/ui/table */
-    module: string;
-    /** 核心 primitive 名称列表 */
-    primitives: string[];
-  };
+  wraps: WrapsSpec;
   /** 必须从 Schema / Props 显式声明且文档化的 props */
   requiredProps: PropSemanticSpec[];
   optionalProps?: PropSemanticSpec[];
   styleLock: StyleLock;
   /**
-   * 给 AI 的短指令（人类可读，会进入 .cursorrules）。
-   * 与 intent 区别：intent 偏产品语义，aiPrompt 偏协作约束。
+   * AI schema 指令：给代码助手的短条款（人类可读，会进入 .cursorrules）。
+   * 与 intent 区别：intent 偏业务场景；本字段偏可执行的协作约束（import、variant、禁止手写类等）。
    */
   aiPrompt: string;
   forbidden?: ForbiddenPattern[];
@@ -174,6 +190,34 @@ export const STYLE_LOCK_CATEGORY_PRESETS = {
 
 export function defineComponentSpec(spec: ComponentSpec): ComponentSpec {
   return spec;
+}
+
+/** 将 JSON 中的 primitives 规范为对象数组（供编辑器与合并逻辑使用） */
+export function normalizePrimitives(list: WrapPrimitiveInput[] | undefined | null): WrapPrimitiveRef[] {
+  if (!list?.length) return [];
+  const out: WrapPrimitiveRef[] = [];
+  for (const p of list) {
+    if (typeof p === "string") {
+      const symbol = p.trim();
+      if (symbol) out.push({ symbol });
+    } else if (p && typeof p === "object" && typeof (p as WrapPrimitiveRef).symbol === "string") {
+      const symbol = (p as WrapPrimitiveRef).symbol.trim();
+      if (!symbol) continue;
+      const dn = (p as WrapPrimitiveRef).displayName?.trim();
+      if (dn && dn !== symbol) out.push({ symbol, displayName: dn });
+      else out.push({ symbol });
+    }
+  }
+  return out;
+}
+
+/** 写回 JSON 时尽量用字符串简写，减小 diff */
+export function serializePrimitives(list: WrapPrimitiveRef[]): WrapPrimitiveInput[] {
+  return list.map((p) =>
+    p.displayName && p.displayName.trim() && p.displayName.trim() !== p.symbol
+      ? { symbol: p.symbol, displayName: p.displayName.trim() }
+      : p.symbol,
+  );
 }
 
 /**

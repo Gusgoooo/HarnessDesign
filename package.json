@@ -14,7 +14,7 @@
     "harness"
   ],
   "bin": {
-    "harness": "bin/harness.mjs"
+    "harness": "./bin/harness.mjs"
   },
   "files": [
     "bin/",
@@ -38,6 +38,7 @@
   "scripts": {
     "generate:rules": "node scripts/generate-cursorrules.mjs",
     "sync:tokens": "node scripts/emit-design-tokens-css.mjs",
+    "sync:tokens:pull": "node scripts/pull-product-tokens.mjs",
     "sync:harness": "npm run sync:tokens && node scripts/sync-from-schema.mjs",
     "harness:audit": "node scripts/harness-audit.mjs",
     "dev:portal": "vite --config src/design-portal/vite.config.ts --open",
