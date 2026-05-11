@@ -1,6 +1,6 @@
 {
   "name": "harness-design",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Design-system kit for teams: token-driven UI, Storybook portal for designer review, spec + audit guardrails for engineers and AI",
   "private": false,
   "type": "module",
