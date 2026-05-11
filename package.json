@@ -14,7 +14,7 @@
     "harness"
   ],
   "bin": {
-    "harness": "./bin/harness.mjs"
+    "harness": "bin/harness.mjs"
   },
   "files": [
     "bin/",
