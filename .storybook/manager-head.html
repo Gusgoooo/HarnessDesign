@@ -29,82 +29,51 @@
     --mgr-input-bg: #27272a;
   }
 
-  /* ─── ① sidebar-header 纵向布局 ─── */
-  .sidebar-header {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    justify-content: flex-start !important;
-    padding: 0 !important;
-    min-height: unset !important;
-    gap: 0 !important;
-  }
-
-  /* ─── ② 隐藏默认 Brand，保留自定义 SidebarTop ─── */
+  /* ─── Hide default Brand / collapse / search ─── */
   .sidebar-header > div:not([data-harness-sidebar-top]):not(:has([data-harness-sidebar-top])) {
     display: none !important;
   }
   .sidebar-header > button {
     display: none !important;
   }
-
-  /* ─── ③ 隐藏搜索框 ─── */
   .search-field {
     display: none !important;
   }
 
-  /* ─── ④ 隐藏 "+" 新建 story 按钮（覆盖所有可能选择器） ─── */
-  [data-action="create-new-story"],
-  button[aria-label="Create a new story"],
-  .sidebar-subheading button,
-  .sidebar-container > div > button:not(.sidebar-header button),
-  nav ~ button,
-  nav + button {
+  /* ─── Hide ALL native sidebar tree, root headings, search, create-story ─── */
+  .sidebar-container nav {
     display: none !important;
   }
-
-  /* ─── ⑤ 隐藏 DesignToken / Patterns 树条目（由侧栏按钮进入） ─── */
-  [data-item-id="designtoken"],
-  [data-item-id="designtoken--docs"],
-  [data-item-id="patterns"],
-  [data-item-id="patterns--docs"] {
+  .sidebar-subheading {
     display: none !important;
   }
-
-  /* ─── ⑥ 选中态 + hover 态（亮色） ─── */
-  :root:not(.dark) [data-selected="true"],
-  :root:not(.dark) [data-selected="true"] *,
-  :root:not(.dark) button[data-selected="true"],
-  :root:not(.dark) a[data-selected="true"] {
-    background-color: #f4f4f5 !important;
-    color: #18181b !important;
-  }
-  :root:not(.dark) #storybook-explorer-tree button:hover,
-  :root:not(.dark) #storybook-explorer-tree a:hover {
-    background-color: #fafafa !important;
-  }
-
-  /* ─── ⑥b 选中态 + hover 态（暗色） ─── */
-  :root.dark [data-selected="true"],
-  :root.dark [data-selected="true"] *,
-  :root.dark button[data-selected="true"],
-  :root.dark a[data-selected="true"] {
-    background-color: #27272a !important;
-    color: #fafafa !important;
-  }
-  :root.dark #storybook-explorer-tree button:hover,
-  :root.dark #storybook-explorer-tree a:hover {
-    background-color: #27272a !important;
-  }
-
-  /* ─── ⑦ 缩小顶部区域与组件树之间的间距 ─── */
   #storybook-explorer-tree {
-    margin-top: -12px !important;
+    display: none !important;
   }
-  .sidebar-container > nav {
-    padding-top: 0 !important;
+  [data-action="create-new-story"],
+  button[aria-label="Create a new story"] {
+    display: none !important;
   }
 
-  /* ─── ⑧ 隐藏 Storybook 通知弹窗 ─── */
+  /* ─── Layout: sidebar-header fills container via scroll-area chain ─── */
+  .sidebar-container {
+    height: 100% !important;
+    overflow: hidden !important;
+  }
+  .sidebar-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    gap: 0 !important;
+  }
+  [data-harness-sidebar-top] {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+  }
+
+  /* ─── Hide Storybook notifications ─── */
   #storybook-notifications-container,
   div[class*="NotificationList"],
   div[class*="notification" i] {

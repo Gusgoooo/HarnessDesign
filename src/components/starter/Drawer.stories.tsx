@@ -9,7 +9,7 @@ const audit = autoClassControls(componentSrc);
 type Args = { [k: string]: string };
 
 const meta = {
-  title: "Drawer",
+  title: "基础组件库/Drawer",
   parameters: {
     layout: "fullscreen",
     harnessTokenCompliance: storyHarnessCompliance({}),

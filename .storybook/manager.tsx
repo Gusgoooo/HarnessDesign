@@ -5,6 +5,7 @@ import {
   addons,
   types,
   useStorybookApi,
+  useStorybookState,
   type API,
 } from "storybook/internal/manager-api";
 import type { API_ComponentEntry, API_HashEntry } from "storybook/internal/types";
@@ -95,38 +96,6 @@ function getImportPath(api: API, item: API_ComponentEntry): string | null {
   return null;
 }
 
-/* ── 可编辑组件标签 ── */
-
-function EditableLabel({ item, api }: { item: API_ComponentEntry; api: API }) {
-  const [editing, setEditing] = React.useState(false);
-  const path = React.useMemo(() => getImportPath(api, item), [api, item]);
-
-  async function commit(v: string) {
-    const t = v.trim();
-    setEditing(false);
-    if (!path || !t || t === item.name) return;
-    try {
-      const r = await fetch(devApi("/api/rename-component-title"), {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ importPath: path, prevTitle: item.name, nextTitle: t }),
-      });
-      const d = (await r.json()) as any;
-      if (!r.ok || !d.ok) { api.addNotification({ id: "rn-err", content: { headline: "重命名失败", subHeadline: d.error ?? r.statusText } }); return; }
-      window.location.reload();
-    } catch (e) { api.addNotification({ id: "rn-err", content: { headline: "重命名失败", subHeadline: String(e) } }); }
-  }
-
-  if (editing) {
-    return <input defaultValue={item.name} autoFocus
-      style={{ font: "inherit", color: "var(--mgr-text)", width: "100%", padding: "1px 4px", borderRadius: 4, border: "1px solid var(--mgr-border)", background: "var(--mgr-input-bg)", boxSizing: "border-box" }}
-      onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}
-      onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); void commit(e.currentTarget.value); } if (e.key === "Escape") setEditing(false); }}
-      onBlur={e => void commit(e.currentTarget.value)} />;
-  }
-
-  return <span title={path ? "双击修改" : ""} style={{ cursor: path ? "text" : "default", color: "var(--mgr-text)" }}
-    onDoubleClick={e => { e.preventDefault(); e.stopPropagation(); if (path) setEditing(true); }}>{item.name}</span>;
-}
 
 /* ── Kit 版本差异圆点（manifest 驱动） ── */
 
@@ -176,48 +145,11 @@ function getComponentKitStatus(kitStatus: KitStatusData | null, item: API_Compon
   return null;
 }
 
-function SidebarKitStatusDot({ item }: { item: API_ComponentEntry }) {
-  const kitStatus = useKitStatus();
-  const status = getComponentKitStatus(kitStatus, item);
-  if (!status || status === "unchanged") return null;
-  const colors = kitStatus?.dotColors ?? {};
-  const color = status === "new" ? (colors.new ?? "#3b82f6") : (colors.modified ?? "#f59e0b");
-  const label = status === "new" ? "Kit 新增组件" : "本地已修改";
-  const title = status === "new"
-    ? "Kit 新增：该组件由最近一次 harness upgrade 引入"
-    : "本地已修改：组件内容与 kit 基准不同（upgrade 时不会被覆盖）";
-  return (
-    <span
-      title={title}
-      onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-      onMouseDown={(e) => e.stopPropagation()}
-      style={{
-        width: 6,
-        height: 6,
-        borderRadius: 9999,
-        background: color,
-        flexShrink: 0,
-        marginLeft: "auto",
-        boxShadow: "0 0 0 1px rgba(0,0,0,0.12)",
-      }}
-      role="img"
-      aria-label={label}
-    />
-  );
-}
 
 /* ── 内联 SVG 图标 ── */
 
 const IcoPlus = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>;
 const IcoSwatch = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><circle cx="8" cy="8" r="1" fill="currentColor"/><circle cx="12" cy="8" r="1" fill="currentColor"/><circle cx="8" cy="12" r="1" fill="currentColor"/></svg>;
-/** 叠层 / pattern，与 DesignToken 图标同尺寸 */
-const IcoLayers = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z" />
-    <path d="M22 17.65 13.5 21.5a2 2 0 0 1-1.66 0l-8.5-3.85a1 1 0 0 1 0-1.83l1-.46" />
-    <path d="m22 12.65-3.5 1.59a2 2 0 0 1-1.66 0L8.5 10.36a1 1 0 0 1 0-1.83l1-.46" />
-  </svg>
-);
 const IcoX = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>;
 /** 圆形 i，Harness 面板说明用 */
 const IcoInfo = () => (
@@ -337,6 +269,259 @@ function InfoTip({ text }: { text: string }) {
 }
 const IcoUp = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
 
+/* ── 自定义侧边栏图标 ── */
+const IcoChevron = ({ open }: { open: boolean }) => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+    style={{ transition: "transform 150ms ease", transform: open ? "rotate(90deg)" : "rotate(0deg)" }}>
+    <path d="m9 18 6-6-6-6" />
+  </svg>
+);
+const IcoComponent = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5.5 8.5 9 12l-3.5 3.5L2 12l3.5-3.5Z"/><path d="m12 2 3.5 3.5L12 9 8.5 5.5 12 2Z"/><path d="M18.5 8.5 22 12l-3.5 3.5L15 12l3.5-3.5Z"/><path d="m12 15 3.5 3.5L12 22l-3.5-3.5L12 15Z"/></svg>;
+const IcoStory = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>;
+const IcoBrain = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/><path d="M3.477 10.896a4 4 0 0 1 .585-.396"/><path d="M19.938 10.5a4 4 0 0 1 .585.396"/><path d="M6 18a4 4 0 0 1-1.967-.516"/><path d="M19.967 17.484A4 4 0 0 1 18 18"/></svg>;
+const IcoGrid = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>;
+
+/* ── 自定义侧边栏树组件（替代 Storybook 原生 tree，Tailwind sidebar block 风格） ── */
+
+type TreeNode = {
+  id: string;
+  name: string;
+  type: string;
+  children: TreeNode[];
+};
+
+const HIDDEN_IDS = new Set(["designtoken", "designtoken--docs", "patterns", "patterns--docs"]);
+
+function buildSidebarTree(index: Record<string, API_HashEntry> | undefined): TreeNode[] {
+  if (!index || Object.keys(index).length === 0) return [];
+  const idx = index;
+  const roots: TreeNode[] = [];
+
+  function buildNode(id: string): TreeNode | null {
+    const entry = idx[id];
+    if (!entry || HIDDEN_IDS.has(id)) return null;
+    const children: TreeNode[] = [];
+    if ("children" in entry && Array.isArray(entry.children)) {
+      for (const cid of entry.children) {
+        const child = buildNode(cid);
+        if (child) children.push(child);
+      }
+    }
+    return { id: entry.id, name: entry.name, type: entry.type, children };
+  }
+
+  for (const entry of Object.values(index)) {
+    if (entry.type === "root") {
+      const node = buildNode(entry.id);
+      if (node) roots.push(node);
+    }
+  }
+  return roots;
+}
+
+function SidebarTreeItem({
+  node,
+  api,
+  currentStoryId,
+  expandedMap,
+  onToggle,
+  depth,
+}: {
+  node: TreeNode;
+  api: API;
+  currentStoryId: string | undefined;
+  expandedMap: Record<string, boolean>;
+  onToggle: (id: string) => void;
+  depth: number;
+}) {
+  const dark = useIsDark();
+  const isExpanded = expandedMap[node.id] ?? false;
+  const isSelected = node.id === currentStoryId;
+  const hasChildren = node.children.length > 0;
+  const indent = depth * 16;
+
+  const selectedBg = dark ? "#27272a" : "#f4f4f5";
+  const hoverBg = dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)";
+
+  if (node.type === "root") {
+    const isAI = node.name === "AI组件库";
+    return (
+      <div style={{ marginTop: depth === 0 ? 0 : undefined }}>
+        <div style={{
+          display: "flex", alignItems: "center", gap: 6,
+          padding: "8px 12px 4px",
+          fontSize: 11, fontWeight: 600, letterSpacing: "0.03em",
+          color: "var(--mgr-text-tertiary)",
+          userSelect: "none",
+        }}>
+          <span style={{ display: "inline-flex", flexShrink: 0 }}>
+            {isAI ? <IcoBrain /> : <IcoGrid />}
+          </span>
+          <span>{node.name}</span>
+        </div>
+        <div>
+          {node.children.map(child => (
+            <SidebarTreeItem key={child.id} node={child} api={api}
+              currentStoryId={currentStoryId} expandedMap={expandedMap}
+              onToggle={onToggle} depth={0} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (node.type === "component" || node.type === "group") {
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => {
+            const wasExpanded = expandedMap[node.id] ?? false;
+            onToggle(node.id);
+            if (!wasExpanded && node.children.length > 0) {
+              const first = node.children[0];
+              if (first.type === "story" || first.type === "docs") {
+                api.selectStory(first.id);
+              }
+            }
+          }}
+          onContextMenu={(e) => {
+            if (node.type === "component") {
+              e.preventDefault();
+              e.stopPropagation();
+              const entry = (api as any).getData?.(node.id) as API_ComponentEntry | undefined;
+              if (entry) {
+                const importPath = getImportPath(api, entry);
+                if (importPath) {
+                  ctxMenuBus.open({ x: e.clientX, y: e.clientY, item: entry, api, importPath });
+                }
+              }
+            }
+          }}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            width: "100%", boxSizing: "border-box",
+            padding: `5px 10px 5px ${12 + indent}px`,
+            border: "none", borderRadius: 6,
+            margin: "1px 6px", marginRight: 6,
+            background: "transparent",
+            color: "var(--mgr-text)",
+            fontSize: 13, fontWeight: 500, fontFamily: "inherit",
+            cursor: "pointer", textAlign: "left",
+            transition: "background 100ms ease",
+          }}
+          onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = hoverBg; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+        >
+          <span style={{ display: "inline-flex", flexShrink: 0, color: "var(--mgr-text-tertiary)", width: 12 }}>
+            {hasChildren && <IcoChevron open={isExpanded} />}
+          </span>
+          <span style={{ display: "inline-flex", flexShrink: 0, color: "var(--mgr-text-muted)" }}>
+            <IcoComponent />
+          </span>
+          <span style={{
+            flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>{node.name}</span>
+          <ComponentKitDot node={node} api={api} />
+        </button>
+        {isExpanded && hasChildren && (
+          <div>
+            {node.children.map(child => (
+              <SidebarTreeItem key={child.id} node={child} api={api}
+                currentStoryId={currentStoryId} expandedMap={expandedMap}
+                onToggle={onToggle} depth={depth + 1} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (node.type === "story" || node.type === "docs") {
+    return (
+      <button
+        type="button"
+        onClick={() => api.selectStory(node.id)}
+        style={{
+          display: "flex", alignItems: "center", gap: 6,
+          width: "calc(100% - 12px)", boxSizing: "border-box",
+          padding: `4px 10px 4px ${12 + indent + 16}px`,
+          border: "none", borderRadius: 6,
+          margin: "1px 6px",
+          background: isSelected ? selectedBg : "transparent",
+          color: isSelected ? "var(--mgr-text)" : "var(--mgr-text-secondary)",
+          fontSize: 13, fontWeight: isSelected ? 500 : 400, fontFamily: "inherit",
+          cursor: "pointer", textAlign: "left",
+          transition: "background 100ms ease",
+        }}
+        onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = hoverBg; }}
+        onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = isSelected ? selectedBg : "transparent"; }}
+      >
+        <span style={{ display: "inline-flex", flexShrink: 0, color: isSelected ? "var(--mgr-text-muted)" : "var(--mgr-text-tertiary)" }}>
+          <IcoStory />
+        </span>
+        <span style={{
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>{node.name}</span>
+      </button>
+    );
+  }
+
+  return null;
+}
+
+function ComponentKitDot({ node, api }: { node: TreeNode; api: API }) {
+  const kitStatus = useKitStatus();
+  if (!kitStatus?.components) return null;
+  const entry = (api as any).getData?.(node.id) as API_ComponentEntry | undefined;
+  if (!entry) return null;
+  const status = getComponentKitStatus(kitStatus, entry);
+  if (!status || status === "unchanged") return null;
+  const colors = kitStatus.dotColors ?? {};
+  const color = status === "new" ? (colors.new ?? "#3b82f6") : (colors.modified ?? "#f59e0b");
+  return (
+    <span style={{
+      width: 6, height: 6, borderRadius: 9999,
+      background: color, flexShrink: 0, marginLeft: "auto",
+      boxShadow: "0 0 0 1px rgba(0,0,0,0.12)",
+    }} />
+  );
+}
+
+function SidebarTree() {
+  const api = useStorybookApi();
+  const state = useStorybookState();
+  const tree = React.useMemo(() => buildSidebarTree(state.index), [state.index]);
+  const [expandedMap, setExpandedMap] = React.useState<Record<string, boolean>>({});
+
+  const onToggle = React.useCallback((id: string) => {
+    setExpandedMap(prev => ({ ...prev, [id]: !(prev[id] ?? false) }));
+  }, []);
+
+  const currentStoryId = state.storyId;
+
+  if (tree.length === 0) {
+    return (
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 24, color: "var(--mgr-text-tertiary)", fontSize: 13,
+      }}>
+        加载中…
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ paddingTop: 4, paddingBottom: 16 }}>
+      {tree.map(rootNode => (
+        <SidebarTreeItem key={rootNode.id} node={rootNode} api={api}
+          currentStoryId={currentStoryId} expandedMap={expandedMap}
+          onToggle={onToggle} depth={0} />
+      ))}
+    </div>
+  );
+}
+
 /* ── 添加组件弹窗（仅上传 .tsx） ── */
 
 function AddComponentDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -412,35 +597,62 @@ function AddComponentDialog({ open, onClose }: { open: boolean; onClose: () => v
   );
 }
 
-/* ── 侧边栏顶部（GPT 风格） ── */
+/* ── 隐藏原生侧边栏树 & 修正布局链 ── */
 
-function useHideCreateStoryButton() {
+function useHideNativeSidebar() {
   React.useEffect(() => {
-    const hide = () => {
-      const sidebar = document.querySelector(".sidebar-container");
-      if (!sidebar) return;
-      sidebar.querySelectorAll<HTMLElement>("button").forEach((btn) => {
-        if (btn.closest("#storybook-explorer-tree") || btn.closest("[data-harness-sidebar-top]")) return;
-        const svg = btn.querySelector("svg");
-        if (!svg) return;
-        const paths = svg.querySelectorAll("path, line, polyline");
-        if (paths.length <= 3 && btn.offsetWidth < 60 && btn.offsetHeight < 60) {
-          btn.style.display = "none";
-        }
+    function apply() {
+      const container = document.querySelector(".sidebar-container");
+      if (!container) return;
+
+      container.querySelectorAll<HTMLElement>("nav").forEach(el => {
+        el.style.display = "none";
       });
-    };
-    hide();
-    const mo = new MutationObserver(hide);
+      container.querySelectorAll<HTMLElement>(".sidebar-subheading").forEach(el => {
+        el.style.display = "none";
+      });
+      container.querySelectorAll<HTMLElement>(".search-field").forEach(el => {
+        el.style.display = "none";
+      });
+      container.querySelectorAll<HTMLElement>('[data-action="create-new-story"], button[aria-label="Create a new story"]').forEach(el => {
+        el.style.display = "none";
+      });
+
+      const header = container.querySelector<HTMLElement>(".sidebar-header");
+      if (header) {
+        let el: HTMLElement | null = header;
+        while (el && el !== container) {
+          el.style.height = "100%";
+          el.style.maxHeight = "100%";
+          el.style.overflow = "hidden";
+          el = el.parentElement;
+        }
+        header.style.display = "flex";
+        header.style.flexDirection = "column";
+        header.style.height = "100%";
+        header.style.overflow = "hidden";
+      }
+
+      const top = container.querySelector<HTMLElement>("[data-harness-sidebar-top]");
+      if (top) {
+        top.style.flex = "1 1 0%";
+        top.style.minHeight = "0";
+      }
+    }
+    apply();
+    const mo = new MutationObserver(apply);
     mo.observe(document.body, { childList: true, subtree: true });
     return () => mo.disconnect();
   }, []);
 }
 
+/* ── 侧边栏顶部 ── */
+
 function SidebarTop() {
   const api = useStorybookApi();
   const dark = useManagerDarkMode();
   const [addOpen, setAddOpen] = React.useState(false);
-  useHideCreateStoryButton();
+  useHideNativeSidebar();
 
   React.useEffect(() => {
     addons.setConfig({ theme: dark ? darkTheme : lightTheme });
@@ -453,104 +665,103 @@ function SidebarTop() {
   const primaryBg = dark ? "#fafafa" : "#18181b";
   const primaryText = dark ? "#18181b" : "#fff";
   const primaryHover = dark ? "#d4d4d8" : "#333";
-  /** 暗色下太阳图标用纯白；浅色下月亮用次要灰；hover 再略加重对比 */
   const themeToggleIconColor = dark ? "#ffffff" : "var(--mgr-text-muted)";
   const themeToggleHoverColor = dark ? "#ffffff" : "#18181b";
 
   return (
     <DarkCtx.Provider value={dark}>
     <div data-harness-sidebar-top="" style={{
-      display: "flex", flexDirection: "column", gap: 10,
-      padding: "16px 8px 0",
+      display: "flex", flexDirection: "column",
+      height: "100%", overflow: "hidden",
       fontFamily: "system-ui,-apple-system,sans-serif",
-      borderBottom: `1px solid var(--mgr-border-light)`,
-      paddingBottom: 12,
     }}>
-      <div style={{ display: "flex", alignItems: "center", padding: "0 12px" }}>
-        <div style={{ fontSize: 21, fontWeight: 700, color: "var(--mgr-text)", letterSpacing: "-0.01em", flex: 1 }}>
-          HarnessDesign
+      {/* ── Header ── */}
+      <div style={{
+        flexShrink: 0, display: "flex", flexDirection: "column", gap: 10,
+        padding: "16px 12px 12px",
+        borderBottom: `1px solid var(--mgr-border-light)`,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", padding: "0 4px" }}>
+          <div style={{ fontSize: 21, fontWeight: 700, color: "var(--mgr-text)", letterSpacing: "-0.01em", flex: 1 }}>
+            HarnessDesign
+          </div>
+          <button
+            type="button"
+            title="切换暗色模式以预览所有暗色组件"
+            onClick={() => {
+              const next = !dark;
+              localStorage.setItem(DARK_KEY, String(next));
+              document.documentElement.classList.toggle("dark", next);
+              try { const ch = new BroadcastChannel(DARK_KEY); ch.postMessage(next); ch.close(); } catch {}
+              window.dispatchEvent(new StorageEvent("storage", { key: DARK_KEY, newValue: String(next) }));
+            }}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 28, height: 28, padding: 0, flexShrink: 0,
+              border: "none", borderRadius: 6, cursor: "pointer",
+              background: "transparent", color: themeToggleIconColor,
+              transition: "color 120ms, background 120ms",
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = dark ? "#27272a" : "#f4f4f5";
+              e.currentTarget.style.color = themeToggleHoverColor;
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = themeToggleIconColor;
+            }}
+          >
+            {dark
+              ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+              : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>}
+          </button>
         </div>
-        <button
-          type="button"
-          title="切换暗色模式以预览所有暗色组件"
-          onClick={() => {
-            const next = !dark;
-            localStorage.setItem(DARK_KEY, String(next));
-            document.documentElement.classList.toggle("dark", next);
-            try { const ch = new BroadcastChannel(DARK_KEY); ch.postMessage(next); ch.close(); } catch {}
-            window.dispatchEvent(new StorageEvent("storage", { key: DARK_KEY, newValue: String(next) }));
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <button type="button" onClick={() => setAddOpen(true)} style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            width: "100%", padding: "7px 12px",
+            fontSize: 13, fontWeight: 500, color: primaryText, background: primaryBg,
+            border: "none", borderRadius: 6, cursor: "pointer", fontFamily: "inherit",
+            transition: "background 120ms",
           }}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            width: 28, height: 28, padding: 0, flexShrink: 0,
-            border: "none", borderRadius: 6, cursor: "pointer",
-            background: "transparent", color: themeToggleIconColor,
-            transition: "color 120ms, background 120ms",
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.background = dark ? "#27272a" : "#f4f4f5";
-            e.currentTarget.style.color = themeToggleHoverColor;
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.background = "transparent";
-            e.currentTarget.style.color = themeToggleIconColor;
-          }}
-        >
-          {dark
-            ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-            : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>}
-        </button>
+            onMouseEnter={e => e.currentTarget.style.background = primaryHover}
+            onMouseLeave={e => e.currentTarget.style.background = primaryBg}>
+            <IcoPlus /> 添加组件
+          </button>
+
+          <button type="button"
+            onClick={() => api.selectStory("designtoken--docs", undefined, { viewMode: "docs" })}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              width: "100%", padding: "7px 12px",
+              fontSize: 13, fontWeight: 500, color: secColor, background: "transparent",
+              border: `1px solid ${secBorder}`, borderRadius: 6, cursor: "pointer", fontFamily: "inherit",
+              transition: "all 120ms",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = secHoverBg; e.currentTarget.style.color = secHoverText; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = secColor; }}>
+            <IcoSwatch /> DesignToken
+          </button>
+        </div>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <button type="button" onClick={() => setAddOpen(true)} style={{
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-          width: "100%", padding: "7px 12px",
-          fontSize: 13, fontWeight: 500, color: primaryText, background: primaryBg,
-          border: "none", borderRadius: 6, cursor: "pointer", fontFamily: "inherit",
-          transition: "background 120ms",
-        }}
-          onMouseEnter={e => e.currentTarget.style.background = primaryHover}
-          onMouseLeave={e => e.currentTarget.style.background = primaryBg}>
-          <IcoPlus /> 添加组件
-        </button>
-
-        <button type="button"
-          onClick={() => api.selectStory("designtoken--docs", undefined, { viewMode: "docs" })}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-            width: "100%", padding: "7px 12px",
-            fontSize: 13, fontWeight: 500, color: secColor, background: "transparent",
-            border: `1px solid ${secBorder}`, borderRadius: 6, cursor: "pointer", fontFamily: "inherit",
-            transition: "all 120ms",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = secHoverBg; e.currentTarget.style.color = secHoverText; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = secColor; }}>
-          <IcoSwatch /> DesignToken
-        </button>
-
-        <button type="button"
-          onClick={() => api.selectStory("patterns--docs", undefined, { viewMode: "docs" })}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-            width: "100%", padding: "7px 12px",
-            fontSize: 13, fontWeight: 500, color: secColor, background: "transparent",
-            border: `1px solid ${secBorder}`, borderRadius: 6, cursor: "pointer", fontFamily: "inherit",
-            transition: "all 120ms",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = secHoverBg; e.currentTarget.style.color = secHoverText; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = secColor; }}>
-          <IcoLayers /> Patterns
-        </button>
+      {/* ── Scrollable Tree ── */}
+      <div style={{
+        flex: 1, minHeight: 0,
+        overflowY: "auto", overflowX: "hidden",
+      }}>
+        <SidebarTree />
       </div>
 
       <AddComponentDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <ComponentContextMenu />
     </div>
     </DarkCtx.Provider>
   );
 }
 
-/* ── AI schema 面板：与当前 Story 关联的规范编辑（落盘 *.spec.json；可选 storyHarness 变体层） ── */
+/* ── Spec.json 面板：与当前 Story 关联的规范编辑（落盘 *.spec.json；可选 storyHarness 变体层） ── */
 
 type SpecData = {
   id: string;
@@ -902,7 +1113,7 @@ function PrimitivesEditor({
           </div>
           <div style={{ flex: "1 1 160px", minWidth: 100 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <span style={HS.label}>AI schema 展示名</span>
+              <span style={HS.label}>Spec 展示名</span>
               <InfoTip text="可与代码符号不同：写入 .cursorrules 时带上中文/业务称呼，便于模型理解子组件职责；留空则仅用 symbol。" />
             </div>
             <input
@@ -1052,7 +1263,7 @@ function CreateSchemaPrompt({ leafTitle, onCreated }: { leafTitle: string; onCre
     <div style={{ ...HS.wrap, alignItems: "center", justifyContent: "center", color: "var(--mgr-text-tertiary)", gap: 12, padding: 24, textAlign: "center" as const }}>
           <div style={{ fontSize: 14, fontWeight: 500, color: "var(--mgr-text-secondary)" }}>{leafTitle}</div>
       <div style={{ fontSize: 12, lineHeight: 1.5, maxWidth: 320 }}>
-        尚未创建该组件的 <strong>AI schema</strong> 规范（<code style={{ fontSize: 11 }}>*.spec.json</code>）
+        尚未创建该组件的 <strong>Spec</strong> 规范（<code style={{ fontSize: 11 }}>*.spec.json</code>）
       </div>
       <button
         type="button"
@@ -1067,7 +1278,7 @@ function CreateSchemaPrompt({ leafTitle, onCreated }: { leafTitle: string; onCre
           gap: 6,
         }}
       >
-        <IcoPlus /> {busy ? "创建中…" : "创建 AI schema 规范"}
+        <IcoPlus /> {busy ? "创建中…" : "创建 Spec 规范"}
       </button>
       {error && <div style={{ fontSize: 12, color: "#dc2626", maxWidth: 300 }}>{error}</div>}
     </div>
@@ -1219,7 +1430,7 @@ function HarnessPanel() {
       <div style={{ ...HS.wrap, alignItems: "center", justifyContent: "center", color: "var(--mgr-text-tertiary)", gap: 10, padding: 24, textAlign: "center" as const, maxWidth: 360 }}>
         <div style={{ fontSize: 14, fontWeight: 500, color: "var(--mgr-text-secondary)" }}>{harnessCtx.leafTitle}</div>
         <div style={{ fontSize: 12, lineHeight: 1.55 }}>
-          <strong>AI schema</strong> 面板按 <strong>Story 变体</strong> 写入：请在左侧树展开本组件，点选一条具体 Story（不要停在分组根或仅画布预览）。
+          <strong>Spec.json</strong> 面板按 <strong>Story 变体</strong> 写入：请在左侧树展开本组件，点选一条具体 Story（不要停在分组根或仅画布预览）。
         </div>
       </div>
     );
@@ -1256,7 +1467,7 @@ function HarnessPanel() {
 
       <div style={{ ...HS.body, flex: 1, minHeight: 0, overflow: "auto" }}>
         <CollapsibleSection
-          title="AI schema · 业务意图与依赖"
+          title="Spec · 业务意图与依赖"
           hint="与当前 Story 变体绑定：保存后写入 storyHarness[storyId]，与顶层 spec 深度合并，再经 sync 进入 .cursorrules；各变体互不影响。常用：Intent、schema 指令、首选 import。"
           defaultOpen={true}
         >
@@ -1303,7 +1514,7 @@ function HarnessPanel() {
         </CollapsibleSection>
 
         <CollapsibleSection
-          title="AI schema · 禁止项、纠错与 Few-shot"
+          title="Spec · 禁止项、纠错与 Few-shot"
           hint="与 harness-audit、`.cursorrules` 对齐：原生标签替代关系、可判定违规→修复话术、可直接复制的最小 JSX；建议由熟悉业务语义的同学维护。"
           defaultOpen={false}
         >
@@ -1408,7 +1619,7 @@ function HarnessPanel() {
           <div style={HS.section}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
               <div style={HS.sectionTitle}>上游封装 · 模块与子组件</div>
-              <InfoTip text="module 指向 starter / ui 的 re-export；子组件列表对应组合导出中的符号，可为每个符号配置 AI schema 展示名（进入 .cursorrules 时更易读）。" />
+              <InfoTip text="module 指向 starter / ui 的 re-export；子组件列表对应组合导出中的符号，可为每个符号配置 Spec 展示名（进入 .cursorrules 时更易读）。" />
             </div>
             <div style={{ ...HS.field, marginBottom: 12 }}>
               <div style={HS.label}>模块路径 wraps.module</div>
@@ -1490,6 +1701,137 @@ function HarnessPanel() {
   );
 }
 
+/* ── 右键上下文菜单 ── */
+
+type CtxMenuState = {
+  x: number;
+  y: number;
+  item: API_ComponentEntry;
+  api: API;
+  importPath: string;
+} | null;
+
+const ctxMenuBus = {
+  _listeners: new Set<(s: CtxMenuState) => void>(),
+  _state: null as CtxMenuState,
+  open(s: CtxMenuState) { this._state = s; this._listeners.forEach(fn => fn(s)); },
+  close() { this.open(null); },
+  subscribe(fn: (s: CtxMenuState) => void) { this._listeners.add(fn); return () => { this._listeners.delete(fn); }; },
+};
+
+function useCtxMenuState(): CtxMenuState {
+  const [s, setS] = React.useState<CtxMenuState>(ctxMenuBus._state);
+  React.useEffect(() => ctxMenuBus.subscribe(setS), []);
+  return s;
+}
+
+function ComponentContextMenu() {
+  const state = useCtxMenuState();
+  const close = React.useCallback(() => ctxMenuBus.close(), []);
+  const dark = useIsDark();
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
+  const menuRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!state) { setConfirmDelete(false); return; }
+  }, [state]);
+
+  React.useEffect(() => {
+    if (!state) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) close();
+    };
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("mousedown", handler); document.removeEventListener("keydown", esc); };
+  }, [state, close]);
+
+  if (!state) return null;
+
+  const D = {
+    bg: dark ? "#27272a" : "#ffffff",
+    border: dark ? "#3f3f46" : "#e4e4e7",
+    text: dark ? "#fafafa" : "#18181b",
+    muted: dark ? "#a1a1aa" : "#71717a",
+    hover: dark ? "#3f3f46" : "#f4f4f5",
+    danger: "#ef4444",
+  };
+
+  const menuStyle: React.CSSProperties = {
+    position: "fixed",
+    top: state.y,
+    left: state.x,
+    zIndex: 2147483647,
+    minWidth: 160,
+    padding: "4px 0",
+    background: D.bg,
+    border: `1px solid ${D.border}`,
+    borderRadius: 8,
+    boxShadow: "0 8px 30px rgba(0,0,0,0.18)",
+    fontFamily: "system-ui,-apple-system,sans-serif",
+    fontSize: 13,
+    color: D.text,
+  };
+
+  const itemStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    width: "100%",
+    padding: "7px 12px",
+    border: "none",
+    background: "none",
+    color: D.text,
+    cursor: "pointer",
+    textAlign: "left",
+    fontFamily: "inherit",
+    fontSize: 13,
+  };
+
+  async function doDelete() {
+    try {
+      const r = await fetch(devApi("/api/delete-component"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ importPath: state!.importPath }),
+      });
+      const d = (await r.json()) as any;
+      if (!d.ok) { alert("删除失败: " + (d.error ?? "")); return; }
+      close();
+      window.location.reload();
+    } catch (e) {
+      alert("删除失败: " + String(e));
+    }
+  }
+
+  if (confirmDelete) {
+    return createPortal(
+      <div ref={menuRef} style={menuStyle}>
+        <div style={{ padding: "8px 12px", fontSize: 12, color: D.muted }}>确认删除「{state.item.name}」？此操作不可撤销。</div>
+        <div style={{ display: "flex", gap: 6, padding: "4px 12px 8px" }}>
+          <button type="button" onClick={() => setConfirmDelete(false)}
+            style={{ ...itemStyle, padding: "5px 12px", width: "auto", border: `1px solid ${D.border}`, borderRadius: 6 }}>取消</button>
+          <button type="button" onClick={() => void doDelete()}
+            style={{ ...itemStyle, padding: "5px 12px", width: "auto", background: D.danger, color: "#fff", borderRadius: 6, fontWeight: 600 }}>删除</button>
+        </div>
+      </div>,
+      document.body,
+    );
+  }
+
+  return createPortal(
+    <div ref={menuRef} style={menuStyle}>
+      <button type="button" onClick={() => setConfirmDelete(true)}
+        onMouseEnter={e => (e.currentTarget.style.background = D.hover)}
+        onMouseLeave={e => (e.currentTarget.style.background = "none")}
+        style={{ ...itemStyle, color: D.danger }}>删除组件</button>
+    </div>,
+    document.body,
+  );
+}
+
+
 /* ── 注册 ── */
 
 addons.setConfig({
@@ -1500,20 +1842,7 @@ addons.setConfig({
     fullscreen: { hidden: true },
   },
   sidebar: {
-    showRoots: false,
-    renderLabel: (item: API_HashEntry, api: API) => {
-      if (item.type === "component") {
-        return (
-          <div style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", minWidth: 0 }}>
-            <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
-              <EditableLabel item={item} api={api} />
-            </div>
-            <SidebarKitStatusDot item={item} />
-          </div>
-        );
-      }
-      return undefined;
-    },
+    showRoots: true,
   },
 });
 
@@ -1525,7 +1854,7 @@ addons.register("harness-design", () => {
 
   addons.add("harness-design/harness-panel", {
     type: types.PANEL,
-    title: "AI schema",
+    title: "Spec.json",
     render: ({ active }) => active ? <HarnessPanel /> : null,
   });
 });

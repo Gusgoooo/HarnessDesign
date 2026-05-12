@@ -8,7 +8,7 @@ import { Button } from "./button";
 const audit = autoClassControls(componentSrc);
 
 const meta = {
-  title: "DropdownMenu",
+  title: "基础组件库/DropdownMenu",
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["children"] }),
   },

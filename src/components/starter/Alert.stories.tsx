@@ -9,7 +9,7 @@ const audit = autoClassControls(componentSrc);
 type Args = { variant: string; [k: string]: unknown };
 
 const meta: Meta<Args> = {
-  title: "Alert",
+  title: "基础组件库/Alert",
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["variant", "children"] }),
   },

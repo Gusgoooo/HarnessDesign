@@ -61,16 +61,11 @@ const preview: Preview = {
     options: {
       storySort: {
         order: [
-          "ALL",
           "DesignToken",
-          "Patterns",
-          "Badge",
-          "Button",
-          "Card",
-          "Checkbox",
-          "DataTable",
-          "Input",
-          ["*"],
+          "基础组件库",
+          ["Badge", "Button", "Card", "Checkbox", "Table", "Input", "*"],
+          "AI组件库",
+          ["Thread", "ThreadList", "AssistantModal", "AssistantSidebar", "Reasoning", "ToolFallback", "ToolGroup", "MarkdownText", "ModelSelector", "Attachment", "FollowUpSuggestions", "TooltipIconButton", "*"],
         ],
       },
     },

@@ -8,7 +8,7 @@ import { Label } from "./label";
 const audit = autoClassControls(componentSrc);
 
 const meta = {
-  title: "RadioGroup",
+  title: "基础组件库/RadioGroup",
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["children", "defaultValue", "value", "onValueChange"] }),
   },

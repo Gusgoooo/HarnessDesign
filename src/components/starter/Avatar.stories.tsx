@@ -7,7 +7,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "./avatar";
 const audit = autoClassControls(componentSrc);
 
 const meta = {
-  title: "Avatar",
+  title: "基础组件库/Avatar",
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["children"] }),
   },

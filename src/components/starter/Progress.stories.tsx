@@ -11,7 +11,7 @@ const audit = autoClassControls(componentSrc, {
 type Args = { value: number; [k: string]: unknown };
 
 const meta: Meta<Args> = {
-  title: "Progress",
+  title: "基础组件库/Progress",
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["value", "children"] }),
   },

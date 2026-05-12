@@ -8,7 +8,7 @@ import { Button } from "./button";
 const audit = autoClassControls(componentSrc);
 
 const meta = {
-  title: "Popover",
+  title: "基础组件库/Popover",
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["children"] }),
   },

@@ -15,7 +15,7 @@ function preventStoryNav(e: React.MouseEvent<HTMLAnchorElement>) {
 }
 
 const meta = {
-  title: "NavigationMenu",
+  title: "基础组件库/NavigationMenu",
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({}),
   },

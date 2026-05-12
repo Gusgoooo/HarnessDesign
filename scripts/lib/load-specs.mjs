@@ -27,3 +27,10 @@ export function loadSpecs(rootOverride) {
     return JSON.parse(raw);
   });
 }
+
+export function loadDecorativeLibs(rootOverride) {
+  const root = getRepoRoot(rootOverride);
+  const file = path.join(root, "src/harness/references/decorative-libs.json");
+  if (!fs.existsSync(file)) return null;
+  return JSON.parse(fs.readFileSync(file, "utf8"));
+}

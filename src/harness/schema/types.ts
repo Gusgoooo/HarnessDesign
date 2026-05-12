@@ -83,7 +83,7 @@ export type ComponentCategory =
   | "action"
   | "other";
 
-/** 上游子组件导出符号；可与展示名拆分，供 AI schema / 规则文案使用 */
+/** 上游子组件导出符号；可与展示名拆分，供 Spec / 规则文案使用 */
 export interface WrapPrimitiveRef {
   /** 与 `wraps.module` 导出一致的符号，如 `DialogContent`、`TableCell` */
   symbol: string;
@@ -131,7 +131,7 @@ export interface ComponentExample {
  * Button / Input / Form 等新增组件时复制本结构并增加 `*.spec.json` 即可接入同一套 sync / audit / Portal。
  */
 export interface ComponentSpec {
-  /** 稳定 id，如 business-data-table */
+  /** 稳定 id，如 data-table */
   id: string;
   /** 导出组件名，如 DataTable */
   componentName: string;
@@ -145,13 +145,13 @@ export interface ComponentSpec {
   optionalProps?: PropSemanticSpec[];
   styleLock: StyleLock;
   /**
-   * AI schema 指令：给代码助手的短条款（人类可读，会进入 .cursorrules）。
+   * Spec 指令：给代码助手的短条款（人类可读，会进入 .cursorrules）。
    * 与 intent 区别：intent 偏业务场景；本字段偏可执行的协作约束（import、variant、禁止手写类等）。
    */
   aiPrompt: string;
   forbidden?: ForbiddenPattern[];
   corrections?: AiCorrection[];
-  /** 引用优先：强制查找的路径前缀（与规划「强制优先 @/components/business」一致） */
+  /** 引用优先：强制查找的路径前缀 */
   referencePriority: string[];
   meta?: ComponentSpecMeta;
   /**

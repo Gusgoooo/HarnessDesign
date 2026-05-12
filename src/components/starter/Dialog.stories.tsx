@@ -16,7 +16,7 @@ type DialogStoryArgs = {
 };
 
 const meta = {
-  title: "Dialog",
+  title: "基础组件库/Dialog",
   parameters: {
     layout: "fullscreen",
     harnessTokenCompliance: storyHarnessCompliance({

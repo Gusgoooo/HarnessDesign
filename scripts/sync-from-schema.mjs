@@ -5,7 +5,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { loadSpecs, getRepoRoot } from "./lib/load-specs.mjs";
+import { loadSpecs, loadDecorativeLibs, getRepoRoot } from "./lib/load-specs.mjs";
 import { renderCursorrules, renderHarnessMarkdown } from "./lib/render-harness-rules.mjs";
 
 const root = getRepoRoot();
@@ -74,10 +74,12 @@ export const harnessSafelist: string[] = ${JSON.stringify(safelist, null, 2)};
   console.log(`Wrote ${path.relative(root, outPath)}`);
 }
 
+const decorativeLibs = loadDecorativeLibs();
+
 function writeHarnessRulesMirror(specs) {
   const dir = path.join(root, "src/harness/rules");
   fs.mkdirSync(dir, { recursive: true });
-  const md = renderHarnessMarkdown(specs);
+  const md = renderHarnessMarkdown(specs, decorativeLibs);
   const mdPath = path.join(dir, "HARNESS_RULES.md");
   fs.writeFileSync(mdPath, md, "utf8");
   console.log(`Wrote ${path.relative(root, mdPath)}`);
@@ -85,7 +87,7 @@ function writeHarnessRulesMirror(specs) {
 
 function writeCursorrules(specs) {
   const outFile = path.join(root, ".cursorrules");
-  fs.writeFileSync(outFile, renderCursorrules(specs), "utf8");
+  fs.writeFileSync(outFile, renderCursorrules(specs, decorativeLibs), "utf8");
   console.log(`Wrote ${path.relative(root, outFile)}`);
 }
 

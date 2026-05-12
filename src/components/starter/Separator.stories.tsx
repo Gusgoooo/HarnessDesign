@@ -7,7 +7,7 @@ import { Separator } from "./separator";
 const audit = autoClassControls(componentSrc);
 
 const meta = {
-  title: "Separator",
+  title: "基础组件库/Separator",
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["children"] }),
   },

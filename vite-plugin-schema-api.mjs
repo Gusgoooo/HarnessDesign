@@ -315,6 +315,87 @@ export function schemaApiPlugin(repoRoot) {
           return;
         }
 
+        if (req.method === "POST" && url === "/api/delete-component") {
+          let raw = "";
+          req.on("data", (c) => { raw += String(c); });
+          req.on("end", () => {
+            try {
+              const payload = JSON.parse(raw);
+              const importPathRaw = String(payload.importPath ?? "");
+
+              if (!importPathRaw) {
+                res.statusCode = 400;
+                res.setHeader("Content-Type", "application/json; charset=utf-8");
+                res.end(JSON.stringify({ ok: false, error: "missing importPath" }));
+                return;
+              }
+
+              const absStory = path.isAbsolute(importPathRaw)
+                ? path.normalize(importPathRaw)
+                : path.normalize(path.join(repoRoot, importPathRaw));
+              const rel = path.relative(repoRoot, absStory);
+              if (rel.startsWith("..") || !rel.startsWith(`src${path.sep}`)) {
+                res.statusCode = 403;
+                res.setHeader("Content-Type", "application/json; charset=utf-8");
+                res.end(JSON.stringify({ ok: false, error: "forbidden path" }));
+                return;
+              }
+
+              const deleted = [];
+
+              // Read the story to find the component import
+              let componentFile = null;
+              if (fs.existsSync(absStory)) {
+                const storyText = fs.readFileSync(absStory, "utf8");
+                // Match: import { X } from "./component-name";
+                const importMatch = storyText.match(/from\s+["']\.\/([\w-]+)["']/);
+                if (importMatch) {
+                  const compBase = importMatch[1];
+                  const dir = path.dirname(absStory);
+                  // Try .tsx then .ts
+                  for (const ext of [".tsx", ".ts"]) {
+                    const candidate = path.join(dir, compBase + ext);
+                    if (fs.existsSync(candidate)) {
+                      componentFile = candidate;
+                      break;
+                    }
+                  }
+                }
+              }
+
+              // Delete story file
+              if (fs.existsSync(absStory)) {
+                fs.unlinkSync(absStory);
+                deleted.push(path.relative(repoRoot, absStory));
+              }
+
+              // Delete component file
+              if (componentFile && fs.existsSync(componentFile)) {
+                fs.unlinkSync(componentFile);
+                deleted.push(path.relative(repoRoot, componentFile));
+              }
+
+              // Delete spec.json if exists
+              if (componentFile) {
+                const compId = path.basename(componentFile, path.extname(componentFile)).toLowerCase();
+                const specPath = path.join(specDir, `${compId}.spec.json`);
+                if (fs.existsSync(specPath)) {
+                  fs.unlinkSync(specPath);
+                  deleted.push(path.relative(repoRoot, specPath));
+                }
+              }
+
+              res.setHeader("Content-Type", "application/json; charset=utf-8");
+              res.end(JSON.stringify({ ok: true, deleted }));
+            } catch (e) {
+              res.statusCode = 500;
+              res.setHeader("Content-Type", "application/json; charset=utf-8");
+              res.end(JSON.stringify({ ok: false, error: String(e) }));
+            }
+          });
+          return;
+        }
+
         if (req.method === "POST" && url === "/api/upload-component") {
           const chunks = [];
           req.on("data", (c) => chunks.push(c));

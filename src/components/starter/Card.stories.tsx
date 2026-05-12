@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 const audit = autoClassControls(componentSrc);
 
 const meta = {
-  title: "Card",
+  title: "基础组件库/Card",
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["children"] }),
   },

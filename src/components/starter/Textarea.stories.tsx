@@ -8,7 +8,7 @@ import { Label } from "./label";
 const audit = autoClassControls(componentSrc);
 
 const meta = {
-  title: "Textarea",
+  title: "基础组件库/Textarea",
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["children", "id", "placeholder", "disabled"] }),
   },

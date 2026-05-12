@@ -11,7 +11,7 @@ const audit = autoClassControls(componentSrc, {
 type Args = { [k: string]: string };
 
 const meta = {
-  title: "InputGroup",
+  title: "基础组件库/InputGroup",
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({}),
   },

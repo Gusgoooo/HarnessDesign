@@ -1,5 +1,5 @@
 {
-  "id": "business-data-table",
+  "id": "data-table",
   "componentName": "DataTable",
   "version": "1.0.0",
   "intent": "展示业务列表数据的主表格：分页、排序、批量操作在此收敛；禁止在业务页散落原生 <table> 与任意间距类。",
@@ -11,7 +11,10 @@
       "TableBody",
       "TableRow",
       "TableHead",
-      { "symbol": "TableCell", "displayName": "数据单元格（TableCell）" }
+      {
+        "symbol": "TableCell",
+        "displayName": "数据单元格（TableCell）"
+      }
     ]
   },
   "requiredProps": [
@@ -36,9 +39,21 @@
       "required": false,
       "defaultValue": "default",
       "enumMap": {
-        "compact": ["text-xs", "py-business-table-cell-y-compact", "px-3"],
-        "comfortable": ["text-sm", "py-business-table-cell-y-comfortable", "px-4"],
-        "default": ["text-sm", "py-business-table-cell-y-default", "px-3"]
+        "compact": [
+          "text-xs",
+          "py-business-table-cell-y-compact",
+          "px-3"
+        ],
+        "comfortable": [
+          "text-sm",
+          "py-business-table-cell-y-comfortable",
+          "px-4"
+        ],
+        "default": [
+          "text-sm",
+          "py-business-table-cell-y-default",
+          "px-3"
+        ]
       }
     },
     {
@@ -49,7 +64,9 @@
       "defaultValue": "plain",
       "enumMap": {
         "plain": [],
-        "striped": ["even:bg-muted/40"]
+        "striped": [
+          "even:bg-muted/40"
+        ]
       }
     }
   ],
@@ -79,19 +96,19 @@
       }
     ]
   },
-  "aiPrompt": "展示表格数据时必须使用 @/components/business/DataTable；通过 density/variant 表达密度与斑马纹，禁止在 JSX 上堆叠 p-/m-/border-/bg-primary 等 Tailwind；列宽用 columns 元数据或模板列，不要手写 w-[13px]。颜色与边框仅允许来自全局令牌 src/design-tokens/tokens.json 所映射的语义类（如 border-border、bg-muted），禁止手写 oklch/hex 离散值。",
+  "aiPrompt": "展示表格数据时必须使用 @/components/starter/data-table；通过 density/variant 表达密度与斑马纹，禁止在 JSX 上堆叠 p-/m-/border-/bg-primary 等 Tailwind；列宽用 columns 元数据或模板列，不要手写 w-[13px]。颜色与边框仅允许来自全局令牌 src/design-tokens/tokens.json 所映射的语义类（如 border-border、bg-muted），禁止手写 oklch/hex 离散值。",
   "forbidden": [
     {
       "htmlTag": "table",
       "reason": "业务列表应走统一 DataTable，以确保间距与品牌锁一致",
-      "useInstead": "@/components/business/DataTable"
+      "useInstead": "@/components/starter/data-table"
     }
   ],
   "corrections": [
     {
       "id": "no-raw-table",
       "violation": "在 features/** 或 pages/** 使用原生 <table>",
-      "fixPrompt": "替换为 import { DataTable } from '@/components/business/DataTable'，数据与列定义传入 props。"
+      "fixPrompt": "替换为 import { DataTable } from '@/components/starter/DataTable'，数据与列定义传入 props。"
     },
     {
       "id": "no-hacky-spacing",
@@ -100,8 +117,8 @@
     }
   ],
   "referencePriority": [
-    "@/components/business/DataTable",
-    "@/components/business"
+    "@/components/starter/data-table",
+    "@/components/starter"
   ],
   "tailwindExtend": {
     "spacing": {
@@ -111,7 +128,11 @@
     }
   },
   "meta": {
-    "tags": ["table", "list", "data-grid"],
+    "tags": [
+      "table",
+      "list",
+      "data-grid"
+    ],
     "portalConfigFile": "data-table.spec.json"
   }
 }

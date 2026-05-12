@@ -7,7 +7,7 @@ import { Skeleton } from "./skeleton";
 const audit = autoClassControls(componentSrc);
 
 const meta = {
-  title: "Skeleton",
+  title: "基础组件库/Skeleton",
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["children"] }),
   },

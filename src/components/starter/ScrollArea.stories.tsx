@@ -7,7 +7,7 @@ import { ScrollArea } from "./scroll-area";
 const audit = autoClassControls(componentSrc);
 
 const meta = {
-  title: "ScrollArea",
+  title: "基础组件库/ScrollArea",
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["children"] }),
   },

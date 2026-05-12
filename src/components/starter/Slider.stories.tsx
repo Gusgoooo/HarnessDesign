@@ -9,7 +9,7 @@ const audit = autoClassControls(componentSrc, {
 });
 
 const meta = {
-  title: "Slider",
+  title: "基础组件库/Slider",
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["children", "defaultValue", "max", "step"] }),
   },

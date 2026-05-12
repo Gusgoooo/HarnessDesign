@@ -17,7 +17,7 @@ type SwitchArgs = {
 };
 
 const meta = {
-  title: "Switch",
+  title: "基础组件库/Switch",
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["children", "id"] }),
   },

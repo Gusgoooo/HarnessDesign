@@ -27,8 +27,8 @@ function formatPrimitivesForRules(prims) {
   return bits.length ? bits.join("、") : "（未列出）";
 }
 
-/** @param {any[]} specs */
-export function renderCursorrules(specs) {
+/** @param {any[]} specs @param {any} [decorativeLibs] */
+export function renderCursorrules(specs, decorativeLibs) {
   const forbidden = specs.flatMap((s) => [
     ...(s.forbidden ?? []),
     ...Object.values(s.storyHarness ?? {}).flatMap((frag) =>
@@ -54,13 +54,13 @@ export function renderCursorrules(specs) {
 
   const lines = [];
   lines.push(
-    "# Harness AI schema — 自动生成，请勿手改（修改 `*.spec.json` 后运行 npm run sync:harness 或 npm run generate:rules）",
+    "# Harness Spec — 自动生成，请勿手改（修改 `*.spec.json` 后运行 npm run sync:harness 或 npm run generate:rules）",
   );
   lines.push("");
   lines.push("## 核心契约（AI 必须遵守）");
   lines.push("");
   lines.push("1. **只用 Design Token**：颜色、间距、圆角等必须通过 token 语义类引用（如 `bg-primary`、`text-muted-foreground`），禁止硬编码色值或任意值 Tailwind。");
-  lines.push("2. **组件优先**：页面开发必须使用 schema 声明的业务组件，禁止原生 HTML 标签替代。");
+  lines.push("2. **组件优先**：页面开发必须使用 Spec 声明的业务组件，禁止原生 HTML 标签替代。");
   lines.push("3. **唯一数据源**：组件行为以 `src/harness/schema/components/*.spec.json` 为准，不凭记忆推断 API。");
   lines.push("");
   lines.push("## 引用优先");
@@ -102,13 +102,13 @@ export function renderCursorrules(specs) {
     }
   });
   lines.push("");
-  lines.push("## 组件意图与 AI schema");
+  lines.push("## 组件意图与 Spec");
   specs.forEach((s) => {
     lines.push(`### ${s.componentName}`);
     lines.push(`- **上游模块**: \`${s.wraps?.module ?? "（未配置）"}\``);
-    lines.push(`- **子组件（AI schema）**: ${formatPrimitivesForRules(s.wraps?.primitives)}`);
+    lines.push(`- **子组件（Spec）**: ${formatPrimitivesForRules(s.wraps?.primitives)}`);
     lines.push(`- **Intent（业务意图）**: ${s.intent}`);
-    lines.push(`- **AI schema 指令**: ${s.aiPrompt}`);
+    lines.push(`- **Spec 指令**: ${s.aiPrompt}`);
     const ex = s.examples ?? [];
     if (ex.length > 0) {
       lines.push("- **Few-shot 示例**（优先模仿结构与 import）：");
@@ -129,7 +129,7 @@ export function renderCursorrules(specs) {
         if (!frag || typeof frag !== "object") continue;
         lines.push(`  - **\`${sid}\`**`);
         if (frag.intent) lines.push(`    - Intent: ${frag.intent}`);
-        if (frag.aiPrompt) lines.push(`    - AI schema 指令: ${frag.aiPrompt}`);
+        if (frag.aiPrompt) lines.push(`    - Spec 指令: ${frag.aiPrompt}`);
         if (frag.wraps && (frag.wraps.module || (frag.wraps.primitives && frag.wraps.primitives.length > 0))) {
           lines.push(`    - **上游 / 子组件（变体覆盖）**`);
           if (frag.wraps.module) lines.push(`      - 模块: \`${frag.wraps.module}\``);
@@ -162,11 +162,42 @@ export function renderCursorrules(specs) {
     });
   }
   lines.push("");
+
+  if (decorativeLibs && Array.isArray(decorativeLibs.libraries) && decorativeLibs.libraries.length > 0) {
+    lines.push("## 装饰/动效组件库（页面点缀）");
+    lines.push("");
+    lines.push("以下第三方组件库可作为页面视觉点缀使用。核心交互仍使用 `@/components/starter/*`，装饰组件仅用于非功能性视觉增强。");
+    lines.push("");
+    const g = decorativeLibs.usageGuidelines;
+    if (g) {
+      lines.push("**使用原则**：");
+      if (g.when) lines.push(`- 适用场景：${g.when}`);
+      if (g.howMany) lines.push(`- 用量控制：${g.howMany}`);
+      if (g.priority) lines.push(`- 优先级：${g.priority}`);
+      if (g.tokens) lines.push(`- 色彩约束：${g.tokens}`);
+      lines.push("");
+    }
+    for (const lib of decorativeLibs.libraries) {
+      lines.push(`### ${lib.name}`);
+      lines.push(`- 文档：${lib.url}`);
+      lines.push(`- 安装：\`${lib.install}\``);
+      lines.push(`- 组件目录：${lib.outputDir}`);
+      if (lib.dependencies?.length) lines.push(`- 运行依赖：${lib.dependencies.join(", ")}`);
+      if (lib.categories && typeof lib.categories === "object") {
+        lines.push("- 可用组件：");
+        for (const [cat, items] of Object.entries(lib.categories)) {
+          lines.push(`  - **${cat}**：${items.join(", ")}`);
+        }
+      }
+      lines.push("");
+    }
+  }
+
   return lines.join("\n");
 }
 
 /** Markdown 镜像（供 Code Review / 非 Cursor 工具阅读） */
-/** @param {any[]} specs */
-export function renderHarnessMarkdown(specs) {
-  return `# Harness 规则镜像\n\n与根目录 \`.cursorrules\` 内容一致（由 \`npm run sync:harness\` 生成）；请勿手改。\n\n${renderCursorrules(specs)}`;
+/** @param {any[]} specs @param {any} [decorativeLibs] */
+export function renderHarnessMarkdown(specs, decorativeLibs) {
+  return `# Harness 规则镜像\n\n与根目录 \`.cursorrules\` 内容一致（由 \`npm run sync:harness\` 生成）；请勿手改。\n\n${renderCursorrules(specs, decorativeLibs)}`;
 }

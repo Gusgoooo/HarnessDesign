@@ -9,7 +9,7 @@ const audit = autoClassControls(componentSrc);
 type Args = { [k: string]: string };
 
 const meta = {
-  title: "Field",
+  title: "基础组件库/Field",
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({}),
   },

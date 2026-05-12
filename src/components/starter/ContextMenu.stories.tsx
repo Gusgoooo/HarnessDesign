@@ -9,7 +9,7 @@ const audit = autoClassControls(componentSrc);
 type Args = { [k: string]: string };
 
 const meta = {
-  title: "ContextMenu",
+  title: "基础组件库/ContextMenu",
   parameters: {
     layout: "fullscreen",
     harnessTokenCompliance: storyHarnessCompliance({}),

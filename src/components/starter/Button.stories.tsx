@@ -9,7 +9,7 @@ const audit = autoClassControls(componentSrc);
 type Args = { variant: string; size: string; disabled: boolean; [k: string]: unknown };
 
 const meta: Meta<Args> = {
-  title: "Button",
+  title: "基础组件库/Button",
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["variant", "size", "children", "asChild", "disabled"] }),
   },

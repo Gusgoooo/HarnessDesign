@@ -11,7 +11,7 @@ type Args = { [k: string]: string };
 const noop = (e: React.MouseEvent) => e.preventDefault();
 
 const meta = {
-  title: "Pagination",
+  title: "基础组件库/Pagination",
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({}),
   },

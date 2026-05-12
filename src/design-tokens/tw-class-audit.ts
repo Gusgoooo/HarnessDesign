@@ -809,7 +809,7 @@ export type AutoPreviewProps = {
 
 export type AutoControlsResult = {
   entries: AuditEntry[];
-  /** 与 Meta.args 兼容：全部为 string，避免与 `[k: string]: string` 冲突 */
+  /** 与 Meta.args 兼容：全部为 string */
   args: Record<string, string>;
   argTypes: Record<string, unknown>;
   buildClassName: (runtimeArgs: ClassOverrideArgs) => string;
@@ -1025,7 +1025,7 @@ export function autoClassControls(
       args[controlId] = String(px);
       argTypes[controlId] = {
         name: controlNameZh(entry),
-        control: { type: "number" as const, min: 0, max: 512, step: 1 },
+        control: { type: "text" as const },
         description: desc,
         table: { category: CATEGORY_LAYOUT_NON_TOKEN },
       };

@@ -11,7 +11,7 @@ const audit = autoClassControls(componentSrc);
 type Args = { disabled: boolean; size: "sm" | "default" | "lg"; [k: string]: unknown };
 
 const meta: Meta<Args> = {
-  title: "Input",
+  title: "基础组件库/Input",
   tags: ["autodocs"],
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({

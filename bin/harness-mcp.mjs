@@ -140,23 +140,19 @@ const TOOLS = [
 
 function listComponents() {
   const result = [];
-  for (const sub of ["starter", "business"]) {
-    const dir = join(LIB_ROOT, "src/components", sub);
-    if (!existsSync(dir)) continue;
-    for (const f of readdirSync(dir)) {
-      if (f.endsWith(".tsx") && !f.includes(".stories.")) {
-        result.push({ name: f.replace(/\.tsx$/, ""), path: `src/components/${sub}/${f}`, category: sub });
-      }
+  const dir = join(LIB_ROOT, "src/components/starter");
+  if (!existsSync(dir)) return result;
+  for (const f of readdirSync(dir)) {
+    if (f.endsWith(".tsx") && !f.includes(".stories.")) {
+      result.push({ name: f.replace(/\.tsx$/, ""), path: `src/components/starter/${f}` });
     }
   }
   return result;
 }
 
 function readComponent(name) {
-  for (const sub of ["starter", "business"]) {
-    const file = join(LIB_ROOT, "src/components", sub, name.endsWith(".tsx") ? name : `${name}.tsx`);
-    if (existsSync(file)) return readFileSync(file, "utf8");
-  }
+  const file = join(LIB_ROOT, "src/components/starter", name.endsWith(".tsx") ? name : `${name}.tsx`);
+  if (existsSync(file)) return readFileSync(file, "utf8");
   throw new Error(`组件 ${name} 不存在`);
 }
 

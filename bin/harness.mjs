@@ -58,6 +58,7 @@ harness — 组件库管理工具
 用法:
   harness start [目标目录]    一键启动（init + install + 打开 Portal）— 设计师推荐
   harness init  [目标目录]    初始化组件库（默认 ./${DEFAULT_HARNESS_DIR}）
+  harness govern              治理模式：仅注入 AI 规则文件，不拷贝组件/CSS（适合已有项目）
   harness upgrade [目标目录]  升级 kit：新增组件直接加入、未修改覆盖、已修改跳过
   harness dev   [目标目录]    启动 Storybook 并自动打开 Portal 页面
   harness mcp   [目标目录]    启动 MCP Server（供 Cursor Agent 使用）
@@ -72,6 +73,9 @@ switch (cmd) {
     break;
   case "init":
     doInit(rest[0]);
+    break;
+  case "govern":
+    doGovern();
     break;
   case "upgrade":
     doUpgrade(rest[0]);
@@ -166,7 +170,7 @@ function buildManifest(target, kitVersion) {
 function buildKitStatus(manifest) {
   const components = {};
   for (const [rel, info] of Object.entries(manifest.files ?? {})) {
-    const m = rel.match(/^src\/components\/(?:starter|business)\/([^/]+)\.tsx$/);
+    const m = rel.match(/^src\/components\/starter\/([^/]+)\.tsx$/);
     if (!m) continue;
     const fileName = m[1];
     if (fileName.includes(".stories")) continue;
@@ -364,7 +368,7 @@ function writeHarnessConsumerDocs(projectRoot, libTarget) {
 业务中写法示例：
 
 \`\`\`tsx
-import { DataTable, BusinessButton } from "@design";
+import { DataTable, Button } from "@design";
 \`\`\`
 
 > 若项目已将 \`@\` 映射到业务 \`src/\`，请勿与 \`@design\` 混用同一前缀；保持 \`@design\` 仅指向 Harness barrel。
@@ -388,7 +392,7 @@ export default {
 使用相对路径，例如从 \`src/pages/Foo.tsx\` 导入：
 
 \`\`\`tsx
-import { BusinessButton } from "${relLib}/index.ts";
+import { Button } from "${relLib}/index.ts";
 \`\`\`
 
 （具体相对路径以文件位置为准。）
@@ -428,15 +432,6 @@ function generateIndex(target) {
     }
   }
 
-  // business 组件
-  const bizDir = join(compsDir, "business");
-  if (existsSync(bizDir)) {
-    const files = readdirSyncSafe(bizDir).filter(f => f.endsWith(".tsx") && !f.includes(".stories.") && !f.includes("kitchen-sink"));
-    for (const f of files) {
-      const mod = f.replace(/\.tsx$/, "");
-      lines.push(`export * from "./src/components/business/${mod}";`);
-    }
-  }
 
   writeFileSync(join(target, "index.ts"), lines.join("\n") + "\n");
   console.log("  ✅ index.ts（组件统一入口）");
@@ -483,7 +478,7 @@ alwaysApply: true
 ## 组件引用规则
 
 1. **禁止使用原生 HTML 标签**：\`<button>\`、\`<input>\`、\`<table>\` 等，必须使用业务组件
-2. **导入路径**：**优先**使用已在业务 \`tsconfig\` / Vite 中配置的 **\`@design\`**（见项目根 \`HARNESS_INTEGRATION.md\`）；否则从 \`${relLib}\` 或 \`${relLib}/src/components/business/\` 导入
+2. **导入路径**：**优先**使用已在业务 \`tsconfig\` / Vite 中配置的 **\`@design\`**（见项目根 \`HARNESS_INTEGRATION.md\`）；否则从 \`${relLib}/src/components/starter/\` 导入
 3. **禁止手写间距**：不允许 \`m-[13px]\`、\`p-[7px]\` 等任意值 Tailwind 类
 4. **颜色仅用语义类**：\`bg-primary\`、\`text-muted-foreground\` 等，禁止硬编码色值
 
@@ -608,6 +603,192 @@ function installSelfcheckRule(projectRoot) {
   mkdirSync(dstDir, { recursive: true });
   cpSync(src, join(dstDir, "harness-selfcheck.mdc"));
   console.log("  ✅ .cursor/rules/harness-selfcheck.mdc");
+}
+
+/* ─── govern（轻量治理模式） ─── */
+
+function doGovern() {
+  const projectRoot = process.cwd();
+
+  console.log(`
+╔══════════════════════════════════════════╗
+║       Harness Govern — 治理模式          ║
+║  仅注入 AI 规则，不拷贝组件/CSS/Storybook ║
+╚══════════════════════════════════════════╝
+`);
+  console.log(`  📂 项目根: ${projectRoot}\n`);
+
+  // 收集 spec 概要（从 npm 包内读取）
+  const specDir = join(PKG_ROOT, "src/harness/schema/components");
+  let specSummary = "";
+  let specDetails = "";
+  if (existsSync(specDir)) {
+    const files = readdirSync(specDir).filter(f => f.endsWith(".spec.json"));
+    for (const f of files) {
+      try {
+        const s = JSON.parse(readFileSync(join(specDir, f), "utf8"));
+        specSummary += `- **${s.componentName}**: ${s.intent}\n`;
+        // 收集 forbidden / corrections / examples 用于规则
+        if (s.forbidden?.length) {
+          specDetails += `\n### ${s.componentName} — 禁止\n`;
+          for (const item of s.forbidden) {
+            specDetails += `- ❌ ${item.pattern}：${item.reason}\n`;
+          }
+        }
+        if (s.corrections?.length) {
+          specDetails += `\n### ${s.componentName} — 纠正\n`;
+          for (const item of s.corrections) {
+            specDetails += `- ⚠️ ${item.id}：${item.wrong} → ${item.right}（${item.reason}）\n`;
+          }
+        }
+      } catch {}
+    }
+  }
+
+  // 1. 生成 .cursor/rules/harness.mdc（治理版：不含 .harness 路径引用）
+  const rulesDir = join(projectRoot, ".cursor/rules");
+  mkdirSync(rulesDir, { recursive: true });
+
+  const governRule = `---
+description: Harness AI 编码治理规则 — 适用于已有项目的组件使用约束
+alwaysApply: true
+---
+
+# Harness AI 编码治理
+
+本项目使用 Harness 治理模式（\`harness govern\`），AI 编码必须遵守以下规范。
+
+## 组件引用规则
+
+1. **禁止使用原生 HTML 标签替代已有组件**：如果项目中已有 Button、Input、Table 等封装组件，禁止绕过使用原生标签
+2. **禁止手写间距**：不允许 \`m-[13px]\`、\`p-[7px]\` 等任意值 Tailwind 类；使用预设的 spacing scale
+3. **颜色仅用语义类**：\`bg-primary\`、\`text-muted-foreground\` 等，禁止硬编码色值（如 \`#ff6600\`、\`rgb()\`）
+4. **一致的设计语言**：新增 UI 必须与现有组件的视觉风格保持一致
+
+## 参考组件规范
+
+以下组件规范来自 Harness 组件库，AI 应参考这些模式：
+
+${specSummary || "（无可用规范）"}
+
+## 详细约束
+
+${specDetails || "（无详细约束）"}
+
+## AI 核心契约
+
+1. 优先复用项目中已有的 UI 组件，禁止重复造轮子
+2. 仅通过 Design Token / CSS 变量 / Tailwind 语义类引用颜色和间距
+3. 修改 UI 前先查阅项目中已有的组件和模式
+4. 不引入与项目现有设计系统风格不一致的第三方 UI 库
+`;
+
+  writeFileSync(join(rulesDir, "harness.mdc"), governRule);
+  console.log("  ✅ .cursor/rules/harness.mdc（AI 治理规则）");
+
+  // 2. 安装 selfcheck 规则
+  const selfcheckSrc = join(PKG_ROOT, ".cursor/rules/harness-selfcheck.mdc");
+  if (existsSync(selfcheckSrc)) {
+    cpSync(selfcheckSrc, join(rulesDir, "harness-selfcheck.mdc"));
+    console.log("  ✅ .cursor/rules/harness-selfcheck.mdc（自检清单）");
+  }
+
+  // 3. 生成 AGENTS.md（治理版）
+  const agentsContent = `# AGENTS.md — AI 编码边界与契约（Govern 模式）
+
+## 治理模式说明
+
+本项目使用 Harness **治理模式**（govern）——仅注入 AI 编码规则，不包含独立组件库目录。
+项目保持原有结构不变，AI 编码通过规则文件引导一致性。
+
+## AI 编码契约
+
+### 必须
+
+- **复用现有组件**：在创建新 UI 前，搜索项目中是否已有类似组件
+- **语义化样式**：使用 Tailwind 主题类或 CSS 变量，不硬编码颜色/尺寸
+- **渐进增强**：新增功能应基于项目现有设计模式扩展，而非另起炉灶
+- **保持一致性**：按钮、输入框、卡片等 UI 元素应与项目现有风格统一
+
+### 禁止
+
+- ❌ 使用原生 HTML 标签替代项目已有的封装组件
+- ❌ 使用任意值 Tailwind 类（\`m-[13px]\`、\`w-[347px]\`）
+- ❌ 硬编码色值（\`#fff\`、\`rgb()\`、\`hsl()\`）
+- ❌ 引入与现有设计系统冲突的第三方 UI 框架
+- ❌ 在业务代码中复制粘贴组件实现（应抽取为共享组件）
+
+### 修改 UI 的流程
+
+1. 先查阅项目中已有组件（搜索 components 目录）
+2. 确认是否可以复用 / 扩展现有组件
+3. 若需新建组件，遵循项目现有的命名和文件组织约定
+4. 使用语义化的 Tailwind 类和 CSS 变量
+`;
+  writeFileSync(join(projectRoot, "AGENTS.md"), agentsContent);
+  console.log("  ✅ AGENTS.md（AI 编码边界）");
+
+  // 4. 生成 .cursorrules（简洁版，兼容非 Cursor IDE）
+  const cursorrules = `# Harness AI Govern Rules
+
+You are working in a project governed by Harness design rules.
+
+## Key Constraints
+- Reuse existing UI components; do not recreate what already exists
+- Use semantic Tailwind classes only (no arbitrary values like m-[13px])
+- Use CSS variables or theme tokens for colors (no hardcoded hex/rgb)
+- Maintain visual consistency with the project's existing design language
+- Search for existing components before creating new UI elements
+
+## Forbidden Patterns
+- Raw HTML tags when a project component exists (e.g. <button> when Button component exists)
+- Arbitrary Tailwind values: m-[*], p-[*], w-[*], h-[*], text-[#*]
+- Hardcoded colors: bg-[#...], text-[#...], border-[#...]
+- Inline styles for layout/spacing/color
+
+## Before Modifying UI
+1. Search the project for existing components
+2. Check if the change can be achieved by extending an existing component
+3. Follow established naming conventions and file structure
+`;
+  writeFileSync(join(projectRoot, ".cursorrules"), cursorrules);
+  console.log("  ✅ .cursorrules（IDE 通用规则）");
+
+  // 5. 可选：配置 MCP（如果 harness-mcp.mjs 存在）
+  const mcpEntry = join(PKG_ROOT, "bin", "harness-mcp.mjs");
+  if (existsSync(mcpEntry)) {
+    const mcpPath = join(projectRoot, ".cursor/mcp.json");
+    let existing = {};
+    if (existsSync(mcpPath)) {
+      try { existing = JSON.parse(readFileSync(mcpPath, "utf8")); } catch {}
+    }
+    const mcpServers = existing.mcpServers || {};
+    mcpServers["harness"] = {
+      command: "node",
+      args: [mcpEntry, projectRoot],
+    };
+    mkdirSync(join(projectRoot, ".cursor"), { recursive: true });
+    writeFileSync(mcpPath, JSON.stringify({ mcpServers }, null, 2) + "\n");
+    console.log("  ✅ .cursor/mcp.json（MCP Server）");
+  }
+
+  console.log(`
+✅ 治理模式初始化完成！
+
+生成的文件：
+  • .cursor/rules/harness.mdc       — AI 编码治理规则（alwaysApply）
+  • .cursor/rules/harness-selfcheck.mdc — 改完代码后的自检清单
+  • .cursorrules                     — IDE 通用规则（兼容 Cursor/Copilot/Claude）
+  • AGENTS.md                        — AI 编码边界说明
+
+与 init 模式的区别：
+  • 不拷贝组件源码、CSS、Storybook
+  • 不创建 .harness/ 目录
+  • 不修改 package.json 或安装依赖
+  • 仅通过规则文件约束 AI 行为
+
+重新打开 IDE 后规则生效。
+`);
 }
 
 /* ─── upgrade ─── */

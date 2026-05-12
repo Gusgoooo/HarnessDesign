@@ -1,11 +1,13 @@
 {
-  "id": "business-input",
-  "componentName": "BusinessInput",
+  "id": "input",
+  "componentName": "Input",
   "version": "1.0.0",
   "intent": "所有文本输入场景的统一入口：搜索、表单字段、密码等；禁止在业务页散落原生 <input> 并手写间距与边框。",
   "wraps": {
     "module": "@/components/starter/input",
-    "primitives": ["Input"]
+    "primitives": [
+      "Input"
+    ]
   },
   "requiredProps": [],
   "optionalProps": [
@@ -75,27 +77,31 @@
       }
     ]
   },
-  "aiPrompt": "需要文本输入时必须使用 @/components/business/BusinessInput；禁止在 JSX 上堆叠 h-/px-/border- 等 Tailwind 覆盖。",
+  "aiPrompt": "需要文本输入时必须使用 @/components/starter/input；禁止在 JSX 上堆叠 h-/px-/border- 等 Tailwind 覆盖。",
   "forbidden": [
     {
       "htmlTag": "input",
       "reason": "业务场景禁止裸 <input>，以保证高度、边框与 focus 样式一致",
-      "useInstead": "@/components/business/BusinessInput"
+      "useInstead": "@/components/starter/input"
     }
   ],
   "corrections": [
     {
       "id": "no-raw-input",
       "violation": "在 features/** 或 pages/** 使用原生 <input>",
-      "fixPrompt": "替换为 import { BusinessInput } from '@/components/business/BusinessInput'。"
+      "fixPrompt": "替换为 import { Input } from '@/components/starter/Input'。"
     }
   ],
   "referencePriority": [
-    "@/components/business/BusinessInput",
-    "@/components/business"
+    "@/components/starter/input",
+    "@/components/starter"
   ],
   "meta": {
-    "tags": ["input", "text-field", "form"],
+    "tags": [
+      "input",
+      "text-field",
+      "form"
+    ],
     "category": "form",
     "status": "stable"
   }

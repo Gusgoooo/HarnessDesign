@@ -1,11 +1,13 @@
 {
-  "id": "business-badge",
-  "componentName": "BusinessBadge",
+  "id": "badge",
+  "componentName": "Badge",
   "version": "1.0.0",
   "intent": "状态标记、标签与计数气泡的统一入口；禁止在业务页手写 span+bg 实现类似效果。",
   "wraps": {
     "module": "@/components/starter/badge",
-    "primitives": ["Badge"]
+    "primitives": [
+      "Badge"
+    ]
   },
   "requiredProps": [
     {
@@ -23,10 +25,26 @@
       "required": false,
       "defaultValue": "default",
       "enumMap": {
-        "default": ["border-transparent", "bg-primary", "text-primary-foreground", "shadow"],
-        "secondary": ["border-transparent", "bg-secondary", "text-secondary-foreground"],
-        "destructive": ["border-transparent", "bg-destructive", "text-destructive-foreground", "shadow"],
-        "outline": ["text-foreground"]
+        "default": [
+          "border-transparent",
+          "bg-primary",
+          "text-primary-foreground",
+          "shadow"
+        ],
+        "secondary": [
+          "border-transparent",
+          "bg-secondary",
+          "text-secondary-foreground"
+        ],
+        "destructive": [
+          "border-transparent",
+          "bg-destructive",
+          "text-destructive-foreground",
+          "shadow"
+        ],
+        "outline": [
+          "text-foreground"
+        ]
       }
     }
   ],
@@ -61,15 +79,20 @@
       }
     ]
   },
-  "aiPrompt": "需要标签/徽章时必须使用 @/components/business/BusinessBadge；通过 variant 控制风格，禁止手写背景色和间距。",
+  "aiPrompt": "需要标签/徽章时必须使用 @/components/starter/badge；通过 variant 控制风格，禁止手写背景色和间距。",
   "forbidden": [],
   "corrections": [],
   "referencePriority": [
-    "@/components/business/BusinessBadge",
-    "@/components/business"
+    "@/components/starter/badge",
+    "@/components/starter"
   ],
   "meta": {
-    "tags": ["badge", "tag", "label", "status"],
+    "tags": [
+      "badge",
+      "tag",
+      "label",
+      "status"
+    ],
     "category": "data-display",
     "status": "stable"
   }

@@ -8,7 +8,7 @@ import { Label } from "./label";
 const audit = autoClassControls(componentSrc);
 
 const meta = {
-  title: "Checkbox",
+  title: "基础组件库/Checkbox",
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["children", "id"] }),
   },

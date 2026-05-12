@@ -7,7 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "./tabs";
 const audit = autoClassControls(componentSrc);
 
 const meta = {
-  title: "Tabs",
+  title: "基础组件库/Tabs",
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({ ignoreArgNames: ["children", "defaultValue", "value", "onValueChange"] }),
   },

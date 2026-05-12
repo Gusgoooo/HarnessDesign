@@ -9,7 +9,7 @@ const audit = autoClassControls(componentSrc);
 type Args = { [k: string]: string };
 
 const meta = {
-  title: "Resizable",
+  title: "基础组件库/Resizable",
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({}),
   },

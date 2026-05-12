@@ -1,11 +1,13 @@
 {
-  "id": "business-checkbox",
-  "componentName": "BusinessCheckbox",
+  "id": "checkbox",
+  "componentName": "Checkbox",
   "version": "1.0.0",
   "intent": "勾选/取消勾选的统一入口：表单同意项、多选过滤器、批量选择等；禁止在业务页裸用 <input type=checkbox>。",
   "wraps": {
     "module": "@/components/starter/checkbox",
-    "primitives": ["Checkbox"]
+    "primitives": [
+      "Checkbox"
+    ]
   },
   "requiredProps": [],
   "optionalProps": [
@@ -53,15 +55,19 @@
       }
     ]
   },
-  "aiPrompt": "需要勾选框时必须使用 @/components/business/BusinessCheckbox；禁止手写尺寸与品牌色。",
+  "aiPrompt": "需要勾选框时必须使用 @/components/starter/checkbox；禁止手写尺寸与品牌色。",
   "forbidden": [],
   "corrections": [],
   "referencePriority": [
-    "@/components/business/BusinessCheckbox",
-    "@/components/business"
+    "@/components/starter/checkbox",
+    "@/components/starter"
   ],
   "meta": {
-    "tags": ["checkbox", "toggle", "form"],
+    "tags": [
+      "checkbox",
+      "toggle",
+      "form"
+    ],
     "category": "form",
     "status": "stable"
   }
